@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.26730.16
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kimbus.Slave", "Kimbus.Slave\Kimbus.Slave.csproj", "{A7A9FB0B-F57A-4EE5-9CA3-3EF72F068295}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kimbus.Slave.Example", "Kimbus.Slave.Example\Kimbus.Slave.Example.csproj", "{74742654-4760-4C36-9243-5325BDDEE985}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{A7A9FB0B-F57A-4EE5-9CA3-3EF72F068295}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A7A9FB0B-F57A-4EE5-9CA3-3EF72F068295}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A7A9FB0B-F57A-4EE5-9CA3-3EF72F068295}.Release|Any CPU.Build.0 = Release|Any CPU
+		{74742654-4760-4C36-9243-5325BDDEE985}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74742654-4760-4C36-9243-5325BDDEE985}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74742654-4760-4C36-9243-5325BDDEE985}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74742654-4760-4C36-9243-5325BDDEE985}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
