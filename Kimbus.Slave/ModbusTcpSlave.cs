@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using Kimbus.Slave.Helpers;
 
 namespace Kimbus.Slave
 {
@@ -18,23 +20,17 @@ namespace Kimbus.Slave
 
         public int Port { get; }
 
-        public Func<ushort, ushort, (ushort[], ModbusExceptionCode)> OnReadHoldingRegister { get; set; } =
-            (addr, count) => (new ushort[0], ModbusExceptionCode.IllegalFunction);
+        public Func<ushort, ushort, (ushort[], ModbusExceptionCode)> OnReadHoldingRegisters { get; set; }
 
-        public Func<ushort, ushort, (ushort[], ModbusExceptionCode)> OnReadInputRegister { get; set; } =
-            (addr, count) => (new ushort[0], ModbusExceptionCode.IllegalFunction);
+        public Func<ushort, ushort, (ushort[], ModbusExceptionCode)> OnReadInputRegisters { get; set; }
 
-        public Func<ushort, ushort, (bool[], ModbusExceptionCode)> OnReadCoils { get; set; } =
-            (addr, count) => (new bool[0], ModbusExceptionCode.IllegalFunction);
+        public Func<ushort, ushort, (bool[], ModbusExceptionCode)> OnReadCoils { get; set; }
 
-        public Func<ushort, ushort, (bool[], ModbusExceptionCode)> OnReadDiscrete { get; set; } =
-            (addr, count) => (new bool[0], ModbusExceptionCode.IllegalFunction);
+        public Func<ushort, ushort, (bool[], ModbusExceptionCode)> OnReadDiscretes { get; set; }
 
-        public Func<ushort, ushort, ushort[], ModbusExceptionCode> OnWriteHoldingRegister { get; set; } =
-            (addr, count, buf) => ModbusExceptionCode.IllegalFunction;
+        public Func<ushort, ushort[], ModbusExceptionCode> OnWriteHoldingRegisters { get; set; }
 
-        public Func<ushort, ushort, bool[], ModbusExceptionCode> OnWriteCoils { get; set; } =
-            (addr, count, buf) => ModbusExceptionCode.IllegalFunction;
+        public Func<ushort, bool[], ModbusExceptionCode> OnWriteCoils { get; set; }
 
         public ModbusTcpSlave(string ipAddress, int port)
         {
@@ -129,85 +125,176 @@ namespace Kimbus.Slave
         
         private byte[] Respond(byte[] request, int requestLength)
         {
-            // process MBAP header
-            var transId = (request[0] << 8) | request[1];
-            var protoId = (request[2] << 8) | request[3];
-            var length = (request[4] << 8) | request[5];
-            var unitId = request[6];
-
-            if (protoId != 0)
-            {
-                return new byte[0];
-            }
-
-            if (length + 6 != requestLength)
-            {
-                return new byte[0];
-            }
-
-            var functionCode = request[7];
-            var address = 65536;
-            var count = 0;
-
-            var responseBuffer = new byte[0];
             var responseCode = ModbusExceptionCode.IllegalFunction;
-            switch (functionCode)
-            {
-                case 1:
-                    address = (request[8] << 8) | request[9];
-                    count = (request[10] << 8) | request[11];
-                   // (responseBuffer, responseCode) = ReadCoils(address, count);
-                    break;
-                case 2:
-                    // Read Discrete Inputs
-                    break;
-                case 5:
-                    // Write single Coil
-                    break;
-                case 15:
-                    // Write multiple Coils
-                    break;
-                case 3:
-                    // Read Holding Registers
-                    break;
-                case 4:
-                    // Read Input Register
-                    break;
-                case 6:
-                    // Write single Register
-                    break;
-                case 16:
-                    // Write multiple Registers
-                    break;
-                default:
-                    break;
-            }
-
             var response = new byte[0];
-            if (responseCode != ModbusExceptionCode.Ok)
+
+            if (requestLength > 8)
             {
-                response = GenerateExceptionResponse(transId, unitId, functionCode, responseCode);
+                // process MBAP header
+                var transId = (request[0] << 8) | request[1];
+                var protoId = (request[2] << 8) | request[3];
+                var length = (request[4] << 8) | request[5];
+                var unitId = request[6];
+
+                if (protoId != 0)
+                {
+                    return new byte[0];
+                }
+
+                if (length + 6 != requestLength)
+                {
+                    return new byte[0];
+                }
+
+                var functionCode = request[7];
+                var address = 65536;
+                var count = 0;
+
+                var responseBuffer = new byte[0];
+                var responseData = new byte[0];
+                switch (functionCode)
+                {
+                    case 1:
+                        if (requestLength == 12)
+                        {
+                            address = (request[8] << 8) | request[9];
+                            count = (request[10] << 8) | request[11];
+                            (responseData, responseCode) = ModbusFunctions.ReadDigitals(address, count, OnReadCoils);
+
+                            if (responseCode == ModbusExceptionCode.Ok)
+                            {
+                                responseBuffer = new byte[2 + responseData.Length];
+                                responseBuffer[0] = functionCode;
+                                responseBuffer[1] = (byte)responseData.Length;
+                                Array.Copy(responseData, 0, responseBuffer, 2, responseData.Length);
+                            }
+                        }
+                        break;
+                    case 2:
+                        if (requestLength == 12)
+                        {
+                            address = (request[8] << 8) | request[9];
+                            count = (request[10] << 8) | request[11];
+                            (responseData, responseCode) = ModbusFunctions.ReadDigitals(address, count, OnReadDiscretes);
+
+                            if(responseCode == ModbusExceptionCode.Ok)
+                            {
+                                responseBuffer = new byte[2 + responseData.Length];
+                                responseBuffer[0] = functionCode;
+                                responseBuffer[1] = (byte)responseData.Length;
+                                Array.Copy(responseData, 0, responseBuffer, 2, responseData.Length);
+                            }
+                        }
+                        break;
+                    case 5:
+                        if (requestLength == 12)
+                        {
+                            address = (request[8] << 8) | request[9];
+                            var inputBuffer = request.Skip(10).Take(2).ToArray();
+                            responseCode = ModbusFunctions.WriteCoils(address, 1, inputBuffer, OnWriteCoils);
+                            if (responseCode == ModbusExceptionCode.Ok)
+                            {
+                                responseBuffer = new byte[5];
+                                Array.Copy(request, 7, responseBuffer, 0, 5);
+                            }
+                        }
+                        break;
+                    case 15:
+                        if (requestLength > 13)
+                        {
+                            address = (request[8] << 8) | request[9];
+                            count = (request[10] << 8) | request[11];
+                            var byteCount = request[12];
+                            if (requestLength == byteCount + 13)
+                            {
+                                var inputBuffer = request.Skip(13).Take(byteCount).ToArray();
+                                responseCode = ModbusFunctions.WriteCoils(address, count, inputBuffer, OnWriteCoils);
+
+                                if (responseCode == ModbusExceptionCode.Ok)
+                                {
+                                    responseBuffer = new byte[5];
+                                    Array.Copy(request, 7, responseBuffer, 0, 5);
+                                }
+                            }
+                        }
+                        break;
+                    case 3:
+                        if (requestLength == 12)
+                        {
+                            address = (request[8] << 8) | request[9];
+                            count = (request[10] << 8) | request[11];
+                            (responseData, responseCode) = ModbusFunctions.ReadAnalogs(address, count, OnReadHoldingRegisters);
+
+                            if (responseCode == ModbusExceptionCode.Ok)
+                            {
+                                responseBuffer = new byte[2 + responseData.Length];
+                                responseBuffer[0] = functionCode;
+                                responseBuffer[1] = (byte)responseData.Length;
+                                Array.Copy(responseData, 0, responseBuffer, 2, responseData.Length);
+                            }
+                        }
+                        break;
+                    case 4:
+                        address = (request[8] << 8) | request[9];
+                        count = (request[10] << 8) | request[11];
+                        (responseData, responseCode) = ModbusFunctions.ReadAnalogs(address, count, OnReadInputRegisters);
+
+                        if (responseCode == ModbusExceptionCode.Ok)
+                        {
+                            responseBuffer = new byte[2 + responseData.Length];
+                            responseBuffer[0] = functionCode;
+                            responseBuffer[1] = (byte)responseData.Length;
+                            Array.Copy(responseData, 0, responseBuffer, 2, responseData.Length);
+                        }
+                        break;
+                    case 6:
+                        if (requestLength == 12)
+                        {
+                            address = (request[8] << 8) | request[9];
+                            var inputBuffer = request.Skip(10).Take(2).ToArray();
+                            responseCode = ModbusFunctions.WriteHoldingRegisters(address, 1, inputBuffer, OnWriteHoldingRegisters);
+
+                            if (responseCode == ModbusExceptionCode.Ok)
+                            {
+                                responseBuffer = new byte[5];
+                                Array.Copy(request, 7, responseBuffer, 0, 5);
+                            }
+                        }
+                        break;
+                    case 16:
+                        if (requestLength > 13)
+                        {
+                            address = (request[8] << 8) | request[9];
+                            count = (request[10] << 8) | request[11];
+                            var byteCount = request[12];
+                            if (requestLength == byteCount + 13)
+                            {
+                                var inputBuffer = request.Skip(13).Take(byteCount).ToArray();
+                                responseCode = ModbusFunctions.WriteHoldingRegisters(address, count, inputBuffer, OnWriteHoldingRegisters);
+
+                                if (responseCode == ModbusExceptionCode.Ok)
+                                {
+                                    responseBuffer = new byte[5];
+                                    Array.Copy(request, 7, responseBuffer, 0, 5);
+                                }
+                            }
+                        }
+                        break;
+                }
+
+                if (responseCode != ModbusExceptionCode.Ok)
+                {
+                    response = ModbusFunctions.GenerateExceptionResponse(transId, unitId, functionCode, responseCode);
+                }
+                else if (responseBuffer.Length != 0)
+                {
+                    response = ModbusFunctions.GenerateResponse(transId, unitId, functionCode, responseBuffer);
+                }
             }
 
             return response;
         }
 
-        private byte[] GenerateExceptionResponse(int transId, byte unitId, int functionCode, ModbusExceptionCode responseCode)
-        {
-            var function = (byte)(functionCode | 0x80);
-            var exceptionCode = (byte)responseCode;
-            var response = new byte[9];
-            response[0] = (byte)(transId >> 8);
-            response[1] = (byte)transId;
-            response[2] = 0;
-            response[3] = 0;
-            response[4] = 0;
-            response[5] = 3;
-            response[6] = unitId;
-            response[7] = function;
-            response[8] = exceptionCode;
-
-            return response;
-        }
+        
     }
 }
