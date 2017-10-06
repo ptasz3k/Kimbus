@@ -8,7 +8,7 @@ namespace Kimbus.Slave.Example
         {
             Console.WriteLine("Hello World!");
 
-            var mbSlave = new MbTcpSlave("127.0.0.1", 502);
+            var mbSlave = new MbTcpSlave("*", 502);
 
             mbSlave.OnWriteCoils = (start, bools) =>
             {
@@ -69,7 +69,6 @@ namespace Kimbus.Slave.Example
             {
                 mbMaster.Open();
                 var result = mbMaster.ReadCoils(0, 999, 1200);
-                ;
             }
 
             Console.ReadLine();
