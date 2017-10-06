@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace Kimbus.Master
 {
     /* http://blogs.msdn.com/b/pfxteam/archive/2011/12/15/10248293.aspx */
-    public sealed class SocketAwaitable : INotifyCompletion
+    internal sealed class SocketAwaitable : INotifyCompletion
     {
         private readonly static Action SENTINEL = () => { };
 
@@ -16,7 +16,7 @@ namespace Kimbus.Master
         internal Action m_continuation;
         internal SocketAsyncEventArgs m_eventArgs;
 
-        public SocketAwaitable(SocketAsyncEventArgs eventArgs)
+        internal SocketAwaitable(SocketAsyncEventArgs eventArgs)
         {
             if (eventArgs == null) throw new ArgumentNullException("SocketAsyncEventArgs");
             m_eventArgs = eventArgs;
@@ -33,14 +33,14 @@ namespace Kimbus.Master
             m_continuation = null;
         }
 
-        public SocketAwaitable GetAwaiter()
+        internal SocketAwaitable GetAwaiter()
         {
             return this;
         }
 
-        public bool IsCompleted { get { return m_wasCompleted; } }
+        internal bool IsCompleted { get { return m_wasCompleted; } }
 
-        public void OnCompleted(Action continuation)
+        internal void OnCompleted(Action continuation)
         {
             if (m_continuation == SENTINEL || Interlocked.CompareExchange(ref m_continuation, continuation, null) == SENTINEL)
             {
@@ -48,16 +48,16 @@ namespace Kimbus.Master
             }
         }
 
-        public void GetResult()
+        internal void GetResult()
         {
             if (m_eventArgs.SocketError != SocketError.Success)
                 throw new SocketException((int)m_eventArgs.SocketError);
         }
     }
 
-    public static class SocketExtensions
+    internal static class SocketExtensions
     {
-        public static SocketAwaitable ReceiveAsync(this Socket socket, SocketAwaitable awaitable)
+        internal static SocketAwaitable ReceiveAsync(this Socket socket, SocketAwaitable awaitable)
         {
             awaitable.Reset();
             if (!socket.ReceiveAsync(awaitable.m_eventArgs))
@@ -65,7 +65,7 @@ namespace Kimbus.Master
             return awaitable;
         }
 
-        public static SocketAwaitable SendAsync(this Socket socket, SocketAwaitable awaitable)
+        internal static SocketAwaitable SendAsync(this Socket socket, SocketAwaitable awaitable)
         {
             awaitable.Reset();
             if (!socket.SendAsync(awaitable.m_eventArgs))
@@ -73,7 +73,7 @@ namespace Kimbus.Master
             return awaitable;
         }
 
-        public static SocketAwaitable ConnectAsync(this Socket socket, SocketAwaitable awaitable, string ip, ushort port)
+        internal static SocketAwaitable ConnectAsync(this Socket socket, SocketAwaitable awaitable, string ip, ushort port)
         {
             awaitable.Reset();
             awaitable.m_eventArgs.RemoteEndPoint = new IPEndPoint(IPAddress.Parse(ip), port);
