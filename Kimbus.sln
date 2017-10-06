@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26730.16
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kimbus.Slave", "Kimbus.Slave\Kimbus.Slave.csproj", "{A7A9FB0B-F57A-4EE5-9CA3-3EF72F068295}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Kimbus", "Kimbus\Kimbus.csproj", "{A7A9FB0B-F57A-4EE5-9CA3-3EF72F068295}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kimbus.Slave.Example", "Kimbus.Slave.Example\Kimbus.Slave.Example.csproj", "{74742654-4760-4C36-9243-5325BDDEE985}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Kimbus.Slave.Example", "Kimbus.Slave.Example\Kimbus.Slave.Example.csproj", "{74742654-4760-4C36-9243-5325BDDEE985}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

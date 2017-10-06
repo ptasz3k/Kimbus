@@ -7,6 +7,8 @@
     <Version>0.5.0</Version>
     <Company>Klimat Solec Sp. z o.o.</Company>
     <Description>Asynchronous modbus tcp/ip slave</Description>
+    <AssemblyName>Kimbus</AssemblyName>
+    <RootNamespace>Kimbus</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

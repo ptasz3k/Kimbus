@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Kimbus.Slave.Helpers
+namespace Kimbus.Helpers
 {
     internal static class EnumerableExtensions
     {

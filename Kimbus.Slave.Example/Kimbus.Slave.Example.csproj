@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Kimbus.Slave\Kimbus.Slave.csproj" />
+    <ProjectReference Include="..\Kimbus\Kimbus.csproj" />
   </ItemGroup>
 
 </Project>

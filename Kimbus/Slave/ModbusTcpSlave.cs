@@ -4,7 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
-using Kimbus.Slave.Helpers;
+using Kimbus.Helpers;
 
 namespace Kimbus.Slave
 {

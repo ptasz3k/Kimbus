@@ -1,4 +1,4 @@
-﻿namespace Kimbus.Slave
+﻿namespace Kimbus
 {
     /// <summary>
     /// Possible Modbus exception codes as describen
