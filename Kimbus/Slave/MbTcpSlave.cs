@@ -35,7 +35,12 @@ namespace Kimbus.Slave
         public MbTcpSlave(string ipAddress, int port)
         {
             IPAddress addr;
-            if (!IPAddress.TryParse(ipAddress, out addr))
+
+            if (ipAddress == "*")
+            {
+                addr = IPAddress.Any;
+            }
+            else if (!IPAddress.TryParse(ipAddress, out addr))
             {
                 throw new ArgumentException(nameof(ipAddress));
             }
