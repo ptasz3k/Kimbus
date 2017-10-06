@@ -8,7 +8,7 @@ using Kimbus.Helpers;
 
 namespace Kimbus.Slave
 {
-    public class ModbusTcpSlave
+    public class MbTcpSlave
     {
         private object _lock = new Object();
 
@@ -32,7 +32,7 @@ namespace Kimbus.Slave
 
         public Func<ushort, bool[], ModbusExceptionCode> OnWriteCoils { get; set; }
 
-        public ModbusTcpSlave(string ipAddress, int port)
+        public MbTcpSlave(string ipAddress, int port)
         {
             IPAddress addr;
             if (!IPAddress.TryParse(ipAddress, out addr))
