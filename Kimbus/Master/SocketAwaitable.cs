@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace Kimbus.Master
 {
     /* http://blogs.msdn.com/b/pfxteam/archive/2011/12/15/10248293.aspx */
-    internal sealed class SocketAwaitable : INotifyCompletion
+    public sealed class SocketAwaitable : INotifyCompletion
     {
         private readonly static Action SENTINEL = () => { };
 
@@ -40,7 +40,7 @@ namespace Kimbus.Master
 
         internal bool IsCompleted { get { return m_wasCompleted; } }
 
-        internal void OnCompleted(Action continuation)
+        public void OnCompleted(Action continuation)
         {
             if (m_continuation == SENTINEL || Interlocked.CompareExchange(ref m_continuation, continuation, null) == SENTINEL)
             {
