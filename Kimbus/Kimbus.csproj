@@ -1,18 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Radek Krahl</Authors>
     <Version>0.5.0</Version>
     <Company>Klimat Solec Sp. z o.o.</Company>
-    <Description>Asynchronous modbus tcp/ip slave</Description>
+    <Description>Asynchronous modbus tcp/ip slave/master</Description>
     <AssemblyName>Kimbus</AssemblyName>
     <RootNamespace>Kimbus</RootNamespace>
+    <PackageId>kimbus-netcore</PackageId>
+    <Product>kimbus</Product>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="System.ValueTuple" Version="4.4.0" />
   </ItemGroup>
-
 </Project>
