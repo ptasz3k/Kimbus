@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Kimbus.Helpers;
+using NLog;
 
 namespace Kimbus.Master
 {
@@ -20,6 +21,8 @@ namespace Kimbus.Master
 
     public class MbMaster : IMbMaster
     {
+        private Logger _logger = LogManager.GetCurrentClassLogger();
+
         protected readonly IMbTransport _mbTransport;
 
         public MbMaster(IMbTransport transport)
@@ -430,7 +433,8 @@ namespace Kimbus.Master
 
         public Try<bool> WriteFile(byte unitId, ushort fileNumber, byte recordSize, ushort recordNumber, byte[] file)
         {
-            //Console.WriteLine($"fileNumber={fileNumber},  recordSize={recordSize}, recordNumber={recordNumber}");
+            _logger.Trace($"fileNumber={fileNumber},  recordSize={recordSize}, recordNumber={recordNumber}");
+
             if (file == null)
             {
                 return Try.Failure<bool>(new ArgumentNullException(nameof(file)));

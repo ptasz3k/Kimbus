@@ -5,11 +5,14 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Kimbus.Helpers;
+using NLog;
 
 namespace Kimbus.Slave
 {
     public class MbTcpSlave
     {
+        private Logger _logger = LogManager.GetCurrentClassLogger();
+
         private object _lock = new Object();
 
         private List<Task> _connections = new List<Task>();
@@ -75,7 +78,7 @@ namespace Kimbus.Slave
                     }
                     catch (Exception ex)
                     {
-                        // _logger.Error(ex.Message);
+                        _logger.Error($"Exception catched: {ex.Message}" + ex.InnerException != null ? $", inner exception: {ex.InnerException.Message}" : string.Empty);
                     }
                 }
             });
@@ -96,7 +99,7 @@ namespace Kimbus.Slave
             }
             catch (Exception ex)
             {
-                    // _logger.Error(ex.Message);
+                _logger.Error($"Exception catched: {ex.Message}" + ex.InnerException != null ? $", inner exception: {ex.InnerException.Message}" : string.Empty);
             }
             finally
             {
@@ -112,7 +115,7 @@ namespace Kimbus.Slave
             await Task.Yield();
 
             string clientEndPoint = tcpClient.Client.RemoteEndPoint.ToString();
-            Console.WriteLine("Received connection request from " + clientEndPoint);
+            _logger.Info($"Received connection request from {clientEndPoint}");
 
             using (var networkStream = tcpClient.GetStream())
             {
@@ -125,7 +128,7 @@ namespace Kimbus.Slave
                 }
             }
 
-            Console.WriteLine("Disconnected");
+            _logger.Info($"{clientEndPoint} disconnected");
         }
         
         private byte[] Respond(byte[] request, int requestLength)
@@ -155,6 +158,7 @@ namespace Kimbus.Slave
                 var address = 65536;
                 var count = 0;
 
+                /* FIXME: rationalize response creation code */
                 var responseBuffer = new byte[0];
                 var responseData = new byte[0];
                 switch (functionCode)

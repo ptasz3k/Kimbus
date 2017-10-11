@@ -1,13 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Kimbus.Helpers;
+using NLog;
 
 namespace Kimbus.Slave
 {
     internal static class ModbusFunctions
     {
+        private static Logger _logger = LogManager.GetCurrentClassLogger();
+
         internal static byte[] GenerateExceptionResponse(int transId, byte unitId, int functionCode, ModbusExceptionCode responseCode)
         {
             var function = (byte)(functionCode | 0x80);
@@ -74,7 +76,8 @@ namespace Kimbus.Slave
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Unhandled exception in user supplied function " + ex.Message);
+                _logger.Error($"Unhandled exception in user supplied function {ex.Message}" +
+                    ex.InnerException != null ? $", inner exception: {ex.InnerException.Message}" : string.Empty);
                 return (new byte[0], ModbusExceptionCode.SlaveDeviceFailure);
             }
 
@@ -131,7 +134,8 @@ namespace Kimbus.Slave
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Unhandled exception in user supplied function " + ex.Message);
+                _logger.Error($"Unhandled exception in user supplied function {ex.Message}" +
+                    ex.InnerException != null ? $", inner exception: {ex.InnerException.Message}" : string.Empty);
                 return ModbusExceptionCode.SlaveDeviceFailure;
             }
         }
@@ -159,7 +163,8 @@ namespace Kimbus.Slave
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Unhandled exception in user supplied function " + ex.Message);
+                _logger.Error($"Unhandled exception in user supplied function {ex.Message}" +
+                    ex.InnerException != null ? $", inner exception: {ex.InnerException.Message}" : string.Empty);
                 return ModbusExceptionCode.SlaveDeviceFailure;
             }
         }
