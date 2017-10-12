@@ -3,7 +3,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Radek Krahl</Authors>
-    <Version>0.6.0</Version>
+    <Version>0.7.0</Version>
     <Company>Klimat Solec Sp. z o.o.</Company>
     <Description>Asynchronous modbus tcp/ip slave/master</Description>
     <AssemblyName>Kimbus</AssemblyName>
