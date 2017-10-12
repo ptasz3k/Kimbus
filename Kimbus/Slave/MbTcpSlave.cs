@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using Kimbus.Helpers;
 using NLog;
@@ -34,6 +35,8 @@ namespace Kimbus.Slave
         public Func<ushort, ushort[], ModbusExceptionCode> OnWriteHoldingRegisters { get; set; }
 
         public Func<ushort, bool[], ModbusExceptionCode> OnWriteCoils { get; set; }
+
+        public int Timeout { get; set; } = 120000;
 
         public MbTcpSlave(string ipAddress, int port)
         {
@@ -119,16 +122,39 @@ namespace Kimbus.Slave
 
             using (var networkStream = tcpClient.GetStream())
             {
-                while (tcpClient.Connected)
+                while (true)
                 {
                     var buffer = new byte[1024];
-                    var byteCount = await networkStream.ReadAsync(buffer, 0, buffer.Length);
+                    var timeout = false;
+                    var cts = new CancellationTokenSource();
+                    var byteCount = (await Task.WhenAny(
+                        networkStream.ReadAsync(buffer, 0, buffer.Length).ContinueWith(t => { cts.Cancel(); return t.Result; }),
+                        Task.Delay(Timeout, cts.Token).ContinueWith(t => { timeout = !t.IsCanceled; return 0; }))
+                        ).Result;
+                    if (byteCount == 0)
+                    {
+                        if (timeout)
+                        {
+                            _logger.Info($"{clientEndPoint} was quiet for {Timeout / 1000} seconds, disconnecting");
+                            break;
+                        }
+
+                        if (tcpClient.Client.Poll(1, SelectMode.SelectRead) && !networkStream.DataAvailable)
+                        {
+                            _logger.Info($"{clientEndPoint} disconnected");
+                            break;
+                        }
+
+                        _logger.Error("Bytecount after stream read was 0, but it wasn't timeout nor client disconnect. INVESTIGATE.");
+                        continue;
+                    }
+
                     var response = Respond(buffer, byteCount);
                     await networkStream.WriteAsync(response, 0, response.Length);
                 }
             }
-
-            _logger.Info($"{clientEndPoint} disconnected");
+            
+            tcpClient.Close();
         }
         
         private byte[] Respond(byte[] request, int requestLength)
