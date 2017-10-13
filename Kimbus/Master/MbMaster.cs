@@ -14,18 +14,24 @@ namespace Kimbus.Master
 
         public MbMaster(IMbTransport transport)
         {
-            if (transport == null) throw new ArgumentException("transport");
+            if (transport == null)
+            {
+                throw new ArgumentNullException(nameof(transport));
+            }
 
             _mbTransport = transport;
         }
 
         private static byte ToMbByte(IEnumerable<bool> bools)
         {
-            if (bools == null) throw new ArgumentNullException("bools");
+            if (bools == null)
+            {
+                throw new ArgumentNullException(nameof(bools));
+            }
 
             var boolist = bools.ToList();
 
-            if (boolist.Count > 8) throw new ArgumentException("Cannot convert more than 8 bools to MbByte");
+            if (boolist.Count > 8) throw new ArgumentException("Cannot convert more than 8 bools to MbByte", nameof(bools));
 
             var byt = Enumerable.Range(0, boolist.Count)
               .Zip(boolist, (n, b) => (b ? 1 : 0) << n)
@@ -37,27 +43,27 @@ namespace Kimbus.Master
         {
             if (count == 0)
             {
-                throw new ArgumentException("Cannot read 0 registers");
+                throw new ArgumentOutOfRangeException("Cannot read 0 registers", nameof(count));
             }
 
-            if ((fun == MbFunctionCode.ReadCoils || fun == MbFunctionCode.ReadDiscreteInputs) && count > 2000)
+            if ((fun == MbFunctionCode.ReadCoils || fun == MbFunctionCode.ReadDiscreteInputs) && count > 1968)
             {
-                throw new ArgumentException("Cannot read more than 2000 registers in one query");
+                throw new ArgumentOutOfRangeException("Cannot read more than 1968 registers in one query", nameof(count));
             }
 
             if ((fun == MbFunctionCode.ReadHoldingRegisters || fun == MbFunctionCode.ReadInputRegisters) && count > 123)
             {
-                throw new ArgumentException("Cannot read more than 123 registers in one query");
+                throw new ArgumentOutOfRangeException("Cannot read more than 123 registers in one query", nameof(count));
             }
 
             return new List<byte>(5)
-      {
-        (byte) fun,
-        (byte) (address >> 8),
-        (byte) (address & 0x00ff),
-        (byte) (count >> 8),
-        (byte) (count & 0x00ff)
-      };
+            {
+                (byte) fun,
+                (byte) (address >> 8),
+                (byte) (address & 0x00ff),
+                (byte) (count >> 8),
+                (byte) (count & 0x00ff)
+            };
         }
 
         internal static List<byte> CreateWriteSingleCoilPdu(ushort address, bool value)
@@ -70,40 +76,43 @@ namespace Kimbus.Master
         internal static List<byte> CreateWriteSingleRegisterPdu(ushort address, ushort value)
         {
             return new List<byte>(5)
-      {
-        (byte) MbFunctionCode.WriteSingleRegister,
-        (byte) (address >> 8),
-        (byte) (address & 0x00ff),
-        (byte) (value >> 8),
-        (byte) (value & 0x00ff)
-      };
+            {
+                (byte) MbFunctionCode.WriteSingleRegister,
+                (byte) (address >> 8),
+                (byte) (address & 0x00ff),
+                (byte) (value >> 8),
+                (byte) (value & 0x00ff)
+            };
         }
 
         internal static List<byte> CreateWriteMultipleCoilsPdu(ushort address, List<bool> values)
         {
-            if (values == null) throw new ArgumentNullException("values");
+            if (values == null)
+            {
+                throw new ArgumentNullException(nameof(values));
+            }
 
             if (values.Count == 0)
             {
-                throw new ArgumentException("Cannot write 0 coils");
+                throw new ArgumentOutOfRangeException("Cannot write 0 coils", nameof(values));
             }
 
-            if (values.Count > 0x07b0)
+            if (values.Count > 1968)
             {
-                throw new ArgumentException("Cannot send more than 0x07b0 coils in one query");
+                throw new ArgumentOutOfRangeException("Cannot send more than 1968 coils in one query", nameof(values));
             }
 
             var bytes = values.Chunk(8).Select(ToMbByte).ToList();
 
             var pdu = new List<byte>()
-      {
-        (byte) MbFunctionCode.WriteMultipleCoils,
-        (byte) (address >> 8),
-        (byte) (address & 0x00ff),
-        (byte) (values.Count >> 8),
-        (byte) (values.Count & 0x00ff),
-        (byte) (bytes.Count),
-      };
+            {
+                (byte) MbFunctionCode.WriteMultipleCoils,
+                (byte) (address >> 8),
+                (byte) (address & 0x00ff),
+                (byte) (values.Count >> 8),
+                (byte) (values.Count & 0x00ff),
+                (byte) (bytes.Count),
+            };
 
             pdu.AddRange(bytes);
 
@@ -112,29 +121,33 @@ namespace Kimbus.Master
 
         internal static List<byte> CreateWriteMultipleRegistersPdu(ushort address, List<ushort> values)
         {
-            if (values == null) throw new ArgumentNullException("values");
+            if (values == null)
+            {
+                throw new ArgumentNullException(nameof(values));
+            }
 
             if (values.Count == 0)
             {
-                throw new ArgumentException("Cannot write 0 holding registers");
+                throw new ArgumentOutOfRangeException("Cannot write 0 holding registers", nameof(values));
             }
 
             if (values.Count > 123)
             {
-                throw new ArgumentException("Cannot write more than 123 registers in one query");
+                throw new ArgumentOutOfRangeException("Cannot write more than 123 registers in one query", nameof(values));
             }
 
             var bytes = values.SelectMany(x => new List<byte>() { (byte)(x >> 8), (byte)(x & 0x00ff) }).ToList();
 
             var pdu = new List<byte>
-      {
-        (byte) MbFunctionCode.WriteMultipleRegisters,
-        (byte) (address >> 8),
-        (byte) (address & 0x00ff),
-        (byte) (values.Count >> 8),
-        (byte) (values.Count & 0x00ff),
-        (byte) (bytes.Count)
-      };
+            {
+                (byte) MbFunctionCode.WriteMultipleRegisters,
+                (byte) (address >> 8),
+                (byte) (address & 0x00ff),
+                (byte) (values.Count >> 8),
+                (byte) (values.Count & 0x00ff),
+                (byte) (bytes.Count)
+            };
+
             pdu.AddRange(bytes);
 
             return pdu;
@@ -142,14 +155,25 @@ namespace Kimbus.Master
 
         internal static List<byte> CreateWriteFilePdu(ushort fileNumber, byte recordSize, ushort recordNumber, byte[] file)
         {
-            if (file == null) throw new ArgumentNullException(nameof(file));
+            if (file == null)
+            {
+                throw new ArgumentNullException(nameof(file));
+            }
 
-            if (file.Length == 0) throw new ArgumentException("File cannot be empty.");
+            if (file.Length == 0)
+            {
+                throw new ArgumentException("File cannot be empty", nameof(file));
+            }
 
-            if ((recordSize == 0) || (recordSize > 244)) throw new ArgumentException(nameof(recordSize));
+            if ((recordSize == 0) || (recordSize > 244))
+            {
+                throw new ArgumentOutOfRangeException(nameof(recordSize));
+            }
 
             if (recordSize * recordNumber > file.Length)
-                throw new ArgumentException("Record number with given record size lies after the end of the file.");
+            {
+                throw new ArgumentException("Record number with given record size lies after the end of the file", nameof(file));
+            }
 
             var bytesToSkip = recordSize * recordNumber;
 
@@ -177,6 +201,7 @@ namespace Kimbus.Master
                 (byte) (recordLength >> 8),
                 (byte) (recordLength & 0x00ff)
             };
+
             pdu.AddRange(bytes);
 
             /* fill in request data length */
@@ -187,46 +212,54 @@ namespace Kimbus.Master
 
         private static void CheckReadResponsePduHeader(MbFunctionCode fun, int byteCountExpected, List<byte> response)
         {
-            if (response == null || response.Count == 0) throw new ArgumentNullException("response");
+            if (response == null)
+            {
+                throw new ArgumentNullException(nameof(response));
+            }
+
+            if (response.Count == 0)
+            {
+                throw new ArgumentException("Won't send empty response", nameof(response));
+            }
 
             CheckFunction(response, fun);
             CheckModbusException(response);
 
-            var byteCount = response.ElementAt(1);
+            var byteCount = response[1];
             if (byteCountExpected != byteCount)
             {
                 throw new ArgumentException(
-                  String.Format("number of bytes in response ({0}) differs from expected ({1})", byteCount, byteCountExpected));
+                  $"number of bytes in response ({byteCount}) differs from expected ({byteCountExpected})", nameof(response));
             }
 
             if (byteCount != response.Count - 2)
             {
                 throw new ArgumentException(
-                  String.Format("number of bytes in response ({0}) differs from declared ({1})", response.Count - 1, byteCount));
+                  $"number of bytes in response ({response.Count - 1}) differs from declared ({byteCount})", nameof(response));
             }
         }
 
         private static void CheckModbusException(List<byte> response)
         {
-            if ((response.First() & 0x80) == 0x80)
+            if ((response[0] & 0x80) == 0x80)
             {
                 // FIXME: react to custom exceptions in more sane way
-                throw new MbException((MbExceptionCode)response.ElementAt(1));
+                throw new MbException((MbExceptionCode)response[1]);
             }
         }
 
         private static void CheckFunction(List<byte> response, MbFunctionCode fun)
         {
-            if ((response.First() & 0x7f) != (int)fun)
+            if ((response[0] & 0x7f) != (int)fun)
             {
                 throw new ArgumentException(
-                  String.Format("function code in response ({0}) differs from function call ({1})", response.First(), (int)fun));
+                  $"function code in response ({response[0]}) differs from function call ({(int)fun})", nameof(response));
             }
         }
 
         internal List<bool> UnwrapDiscretePdu(MbFunctionCode fun, ushort count, List<byte> response)
         {
-            var byteCountExpected = (count / 8 + ((count % 8 != 0) ? 1 : 0));
+            var byteCountExpected = ((count / 8) + ((count % 8 != 0) ? 1 : 0));
             CheckReadResponsePduHeader(fun, byteCountExpected, response);
 
             var bools =
@@ -309,13 +342,13 @@ namespace Kimbus.Master
 
             var vals = values.ToList();
 
-            if (vals.Count() == 1)
+            if (vals.Count == 1)
             {
                 return
-                  from pdu in Try.Apply(() => CreateWriteSingleCoilPdu(address, vals.First()))
+                  from pdu in Try.Apply(() => CreateWriteSingleCoilPdu(address, vals[0]))
                   from snd in _mbTransport.Send(unitId, pdu)
                   from res in _mbTransport.Receive()
-                  select CheckWriteSingleResponse(res, MbFunctionCode.WriteSingleCoil, address, (ushort)(vals.First() ? 0xff00 : 0x0000));
+                  select CheckWriteSingleResponse(res, MbFunctionCode.WriteSingleCoil, address, (ushort)(vals[0] ? 0xff00 : 0x0000));
             }
 
             return
@@ -327,7 +360,10 @@ namespace Kimbus.Master
 
         private bool CheckWriteMultipleResponse(List<byte> response, MbFunctionCode fun, ushort address, int p)
         {
-            if (response == null) throw new ArgumentNullException("response");
+            if (response == null)
+            {
+                throw new ArgumentNullException(nameof(response));
+            }
 
             CheckFunction(response, fun);
             CheckModbusException(response);
@@ -336,14 +372,14 @@ namespace Kimbus.Master
             if (address != responseAddr)
             {
                 throw new ArgumentException(
-                  String.Format("address in response ({0}) differs from address in request ({1})", responseAddr, address));
+                  $"address in response ({responseAddr}) differs from address in request ({address})", nameof(address));
             }
 
             var responseCount = (ushort)((response.ElementAt(3)) | response.ElementAt(4));
             if (p != responseCount)
             {
                 throw new ArgumentException(
-                  String.Format("value in response ({0}) differs from value in request ({1})", responseCount, p));
+                  $"value in response ({responseCount}) differs from value in request ({p})", nameof(response));
             }
 
             return true;
@@ -351,23 +387,26 @@ namespace Kimbus.Master
 
         private bool CheckWriteSingleResponse(List<byte> response, MbFunctionCode fun, ushort address, ushort value)
         {
-            if (response == null) throw new ArgumentNullException("response");
+            if (response == null)
+            {
+                throw new ArgumentNullException(nameof(response));
+            }
 
             CheckFunction(response, fun);
             CheckModbusException(response);
 
-            var responseAddr = (ushort)((response.ElementAt(1) << 8) | response.ElementAt(2));
+            var responseAddr = (ushort)((response[1] << 8) | response[2]);
             if (address != responseAddr)
             {
                 throw new ArgumentException(
-                  String.Format("address in response ({0}) differs from address in request ({1})", responseAddr, address));
+                  $"address in response ({responseAddr}) differs from address in request ({address})", nameof(address));
             }
 
-            var responseVal = (ushort)((response.ElementAt(3)) << 8 | response.ElementAt(4));
+            var responseVal = (ushort)((response[3]) << 8 | response[4]);
             if (value != responseVal)
             {
                 throw new ArgumentException(
-                  String.Format("value in response ({0}) differs from value in request ({1})", responseVal, value));
+                  $"value in response ({responseVal}) differs from value in request ({value})", nameof(value));
             }
 
             return true;
@@ -375,45 +414,48 @@ namespace Kimbus.Master
 
         private bool CheckWriteFileResponse(List<byte> response, List<byte> pdu)
         {
-            if (response == null) throw new ArgumentException(nameof(response));
+            if (response == null)
+            {
+                throw new ArgumentException(nameof(response));
+            }
 
             CheckFunction(response, MbFunctionCode.WriteFile);
             CheckModbusException(response);
 
             if (response.Zip(pdu, (r, p) => r != p).Any(b => b))
             {
-                throw new ArgumentException("Response differs from request.");
+                throw new ArgumentException("Response differs from request", nameof(response));
             }
 
             return true;
         }
 
-        public Try<bool> WriteHoldingRegisters(byte unitId, ushort address, IEnumerable<ushort> values)
+        public Try<bool> WriteHoldingRegisters(byte slaveId, ushort address, IEnumerable<ushort> values)
         {
             if (values == null)
             {
-                return Try.Failure<bool>(new ArgumentNullException("values"));
+                return Try.Failure<bool>(new ArgumentNullException(nameof(values)));
             }
 
             var vals = values.ToList();
 
             if (vals.Count == 0)
             {
-                return Try.Failure<bool>(new ArgumentException("Cannot write 0 holding registers"));
+                return Try.Failure<bool>(new ArgumentException("Cannot write 0 holding registers", nameof(values)));
             }
 
             if (vals.Count == 1)
             {
                 return
-                  from pdu in Try.Apply(() => CreateWriteSingleRegisterPdu(address, vals.First()))
-                  from snd in _mbTransport.Send(unitId, pdu)
+                  from pdu in Try.Apply(() => CreateWriteSingleRegisterPdu(address, vals[0]))
+                  from snd in _mbTransport.Send(slaveId, pdu)
                   from res in _mbTransport.Receive()
-                  select CheckWriteSingleResponse(res, MbFunctionCode.WriteSingleRegister, address, vals.First());
+                  select CheckWriteSingleResponse(res, MbFunctionCode.WriteSingleRegister, address, vals[0]);
             }
 
             return
               from pdu in Try.Apply(() => CreateWriteMultipleRegistersPdu(address, vals))
-              from snd in _mbTransport.Send(unitId, pdu)
+              from snd in _mbTransport.Send(slaveId, pdu)
               from res in _mbTransport.Receive()
               select CheckWriteMultipleResponse(res, MbFunctionCode.WriteMultipleRegisters, address, vals.Count);
         }
@@ -435,12 +477,12 @@ namespace Kimbus.Master
         }
 
 
-        public Try<List<byte>> SendUserFunction(byte unitId, byte functionCode, byte[] data)
+        public Try<List<byte>> SendUserFunction(byte slaveId, byte functionCode, byte[] data)
         {
             var pdu = new[] { functionCode }.Concat(data).ToList();
 
             var r =
-                from snd in _mbTransport.Send(unitId, pdu)
+                from snd in _mbTransport.Send(slaveId, pdu)
                 from response in _mbTransport.Receive()
                 select UnwrapUserFunctionPdu(functionCode, response);
 
@@ -449,14 +491,16 @@ namespace Kimbus.Master
 
         private List<byte> UnwrapUserFunctionPdu(byte functionCode, List<byte> response)
         {
-            if (!response.Any())
+            if (response.Count == 0)
             {
-                throw new ArgumentException("Empty response");
+                throw new ArgumentException("Empty response", nameof(response));
             }
+
             if (response[0] == functionCode)
             {
                 return response.Skip(1).ToList();
             }
+
             throw new Exception("Modbus exception: " + string.Join(", ", response.Select(x => x.ToString("X"))));
         }
 
