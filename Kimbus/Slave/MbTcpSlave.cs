@@ -186,9 +186,9 @@ namespace Kimbus.Slave
                 /* FIXME: rationalize response creation code */
                 var responseBuffer = new byte[0];
                 var responseData = new byte[0];
-                switch (functionCode)
+                switch ((MbFunctionCode)functionCode)
                 {
-                    case 1:
+                    case MbFunctionCode.ReadCoils:
                         if (requestLength == 12)
                         {
                             address = (request[8] << 8) | request[9];
@@ -204,7 +204,7 @@ namespace Kimbus.Slave
                             }
                         }
                         break;
-                    case 2:
+                    case MbFunctionCode.ReadDiscreteInputs:
                         if (requestLength == 12)
                         {
                             address = (request[8] << 8) | request[9];
@@ -220,7 +220,7 @@ namespace Kimbus.Slave
                             }
                         }
                         break;
-                    case 5:
+                    case MbFunctionCode.WriteSingleCoil:
                         if (requestLength == 12)
                         {
                             address = (request[8] << 8) | request[9];
@@ -233,7 +233,7 @@ namespace Kimbus.Slave
                             }
                         }
                         break;
-                    case 15:
+                    case MbFunctionCode.WriteMultipleCoils:
                         if (requestLength > 13)
                         {
                             address = (request[8] << 8) | request[9];
@@ -252,7 +252,7 @@ namespace Kimbus.Slave
                             }
                         }
                         break;
-                    case 3:
+                    case MbFunctionCode.ReadHoldingRegisters:
                         if (requestLength == 12)
                         {
                             address = (request[8] << 8) | request[9];
@@ -268,7 +268,7 @@ namespace Kimbus.Slave
                             }
                         }
                         break;
-                    case 4:
+                    case MbFunctionCode.ReadInputRegisters:
                         address = (request[8] << 8) | request[9];
                         count = (request[10] << 8) | request[11];
                         (responseData, responseCode) = ModbusFunctions.ReadAnalogs(address, count, OnReadInputRegisters);
@@ -281,7 +281,7 @@ namespace Kimbus.Slave
                             Array.Copy(responseData, 0, responseBuffer, 2, responseData.Length);
                         }
                         break;
-                    case 6:
+                    case MbFunctionCode.WriteSingleRegister:
                         if (requestLength == 12)
                         {
                             address = (request[8] << 8) | request[9];
@@ -295,7 +295,7 @@ namespace Kimbus.Slave
                             }
                         }
                         break;
-                    case 16:
+                    case MbFunctionCode.WriteMultipleRegisters:
                         if (requestLength > 13)
                         {
                             address = (request[8] << 8) | request[9];
