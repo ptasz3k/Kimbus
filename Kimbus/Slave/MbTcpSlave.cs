@@ -52,12 +52,20 @@ namespace Kimbus.Slave
 
             IpAddress = addr;
 
-            if (port < 0 || port > 65535)
+            if (port < 1 || port > 65535)
             {
-                throw new ArgumentException(nameof(port));
+                throw new ArgumentOutOfRangeException(nameof(port));
             }
 
             Port = (ushort)port;
+
+            if (timeout <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(timeout));
+            }
+
+            Timeout = timeout;
+
         }
 
         public Task Listen()
