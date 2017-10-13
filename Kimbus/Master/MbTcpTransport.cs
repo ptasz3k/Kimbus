@@ -50,13 +50,6 @@ namespace Kimbus.Master
             return header;
         }
 
-        private static List<byte> UnwrapFromMbapHeader(ushort transactionId, List<byte> adu)
-        {
-            // FIXME: fucking simple and baaaad way
-            // TODO: check if transaction id is the same that was passed
-            return adu.Skip(7).ToList();
-        }
-
         public MbTcpTransport(string ip, ushort port, int timeout = 10000)
         {
             _eventArgs = new SocketAsyncEventArgs();
@@ -123,7 +116,12 @@ namespace Kimbus.Master
                       throw new SocketException((int)SocketError.NotConnected);
                   }
 
-                  return UnwrapFromMbapHeader(_transactionId, buffer);
+                  (var transId, var unitId, var pdu) = MbHelpers.UnwrapMbapHeader(buffer);
+
+                  // TODO: check if transId and unitId are consistent with request,
+                  //       throw exception if not
+                  return pdu;
+
               })
               select res;
 

@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Kimbus.Helpers;
 using NLog;
 
 namespace Kimbus.Slave
@@ -161,7 +162,7 @@ namespace Kimbus.Slave
                         continue;
                     }
 
-                    var response = Respond(buffer, byteCount);
+                    var response = Respond(buffer.Take(byteCount).ToList());
                     await networkStream.WriteAsync(response, 0, response.Length);
                 }
             }
@@ -169,27 +170,25 @@ namespace Kimbus.Slave
             tcpClient.Close();
         }
         
-        private byte[] Respond(byte[] request, int requestLength)
+        private byte[] Respond(List<byte> request)
         {
+            var requestLength = request.Count;
             var responseCode = MbExceptionCode.IllegalFunction;
             var response = new byte[0];
 
             if (requestLength > 8)
             {
-                // process MBAP header
-                var transId = (request[0] << 8) | request[1];
-                var protoId = (request[2] << 8) | request[3];
-                var length = (request[4] << 8) | request[5];
-                var unitId = request[6];
+                ushort transId = 0;
+                byte unitId = 0;
+                var pdu = new List<byte>();
 
-                if (protoId != 0)
+                try
                 {
-                    return new byte[0];
+                    (transId, unitId, pdu) = MbHelpers.UnwrapMbapHeader(request);
                 }
-
-                if (length + 6 != requestLength)
+                catch (Exception ex)
                 {
-                    return new byte[0];
+                    _logger.Error($"Error while processing MBAP header: {ex.Message}");
                 }
 
                 var functionCode = request[7];
@@ -242,7 +241,7 @@ namespace Kimbus.Slave
                             if (responseCode == MbExceptionCode.Ok)
                             {
                                 responseBuffer = new byte[5];
-                                Array.Copy(request, 7, responseBuffer, 0, 5);
+                                Array.Copy(request.ToArray(), 7, responseBuffer, 0, 5);
                             }
                         }
                         break;
@@ -260,7 +259,7 @@ namespace Kimbus.Slave
                                 if (responseCode == MbExceptionCode.Ok)
                                 {
                                     responseBuffer = new byte[5];
-                                    Array.Copy(request, 7, responseBuffer, 0, 5);
+                                    Array.Copy(request.ToArray(), 7, responseBuffer, 0, 5);
                                 }
                             }
                         }
@@ -304,7 +303,7 @@ namespace Kimbus.Slave
                             if (responseCode == MbExceptionCode.Ok)
                             {
                                 responseBuffer = new byte[5];
-                                Array.Copy(request, 7, responseBuffer, 0, 5);
+                                Array.Copy(request.ToArray(), 7, responseBuffer, 0, 5);
                             }
                         }
                         break;
@@ -322,7 +321,7 @@ namespace Kimbus.Slave
                                 if (responseCode == MbExceptionCode.Ok)
                                 {
                                     responseBuffer = new byte[5];
-                                    Array.Copy(request, 7, responseBuffer, 0, 5);
+                                    Array.Copy(request.ToArray(), 7, responseBuffer, 0, 5);
                                 }
                             }
                         }
