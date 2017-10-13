@@ -211,7 +211,7 @@ namespace Kimbus.Master
             if ((response.First() & 0x80) == 0x80)
             {
                 // FIXME: react to custom exceptions in more sane way
-                throw new ModbusException((ModbusExceptionCode)response.ElementAt(1));
+                throw new MbException((MbExceptionCode)response.ElementAt(1));
             }
         }
 

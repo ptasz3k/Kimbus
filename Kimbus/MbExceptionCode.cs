@@ -4,7 +4,7 @@
     /// Possible Modbus exception codes as describen
     /// in MODBUS Application Protocol Specification V1.1b.
     /// </summary>
-    public enum ModbusExceptionCode
+    public enum MbExceptionCode
     {
         /// <summary>
         /// Request processed without errors.

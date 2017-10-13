@@ -19,7 +19,7 @@ namespace Kimbus.Slave.Example
                     Console.WriteLine("{0}: {1}", i + start, bools[i]);
                 }
 
-                return ModbusExceptionCode.Ok;
+                return MbExceptionCode.Ok;
             };
 
             mbSlave.OnWriteHoldingRegisters = (start, hrs) =>
@@ -31,7 +31,7 @@ namespace Kimbus.Slave.Example
                     Console.WriteLine("{0}: {1}", i + start, hrs[i]);
                 }
 
-                return ModbusExceptionCode.Ok;
+                return MbExceptionCode.Ok;
 
             };
 
@@ -44,7 +44,7 @@ namespace Kimbus.Slave.Example
                     buffer[i] = (ushort)(i + start);
                 }
 
-                return (buffer, ModbusExceptionCode.Ok);
+                return (buffer, MbExceptionCode.Ok);
             };
             mbSlave.OnReadInputRegisters = mbSlave.OnReadHoldingRegisters;
 
@@ -58,18 +58,18 @@ namespace Kimbus.Slave.Example
                     buffer[i] = (start + i) % 3 == 0;
                 }
 
-                return (buffer, ModbusExceptionCode.Ok);
+                return (buffer, MbExceptionCode.Ok);
             };
             mbSlave.OnReadDiscretes = mbSlave.OnReadCoils;
 
 
             mbSlave.Listen();
 
-            using (var mbMaster = new Master.MbMaster(new Master.MbTcpTransport("127.0.0.1", 502)))
-            {
-                mbMaster.Open();
-                var result = mbMaster.ReadCoils(0, 999, 1200);
-            }
+            //using (var mbMaster = new Master.MbMaster(new Master.MbTcpTransport("127.0.0.1", 502)))
+            //{
+            //    mbMaster.Open();
+            //    var result = mbMaster.ReadCoils(0, 999, 1200);
+            //}
 
             Console.ReadLine();
         }

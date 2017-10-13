@@ -10,7 +10,7 @@ namespace Kimbus.Slave
     {
         private static Logger _logger = LogManager.GetCurrentClassLogger();
 
-        internal static byte[] GenerateExceptionResponse(int transId, byte unitId, int functionCode, ModbusExceptionCode responseCode)
+        internal static byte[] GenerateExceptionResponse(int transId, byte unitId, int functionCode, MbExceptionCode responseCode)
         {
             var function = (byte)(functionCode | 0x80);
             var exceptionCode = (byte)responseCode;
@@ -41,67 +41,67 @@ namespace Kimbus.Slave
               .Aggregate<int, byte>(0, (acc, bit) => (byte)(acc | bit));
         }
 
-        internal static (byte[], ModbusExceptionCode) Read<T>(int address, int count,
-            Func<ushort, ushort, (T[], ModbusExceptionCode)> onRead, Func<IEnumerable<T>, IEnumerable<byte>> unpack)
+        internal static (byte[], MbExceptionCode) Read<T>(int address, int count,
+            Func<ushort, ushort, (T[], MbExceptionCode)> onRead, Func<IEnumerable<T>, IEnumerable<byte>> unpack)
         {
             if (onRead == null)
             {
-                return (new byte[0], ModbusExceptionCode.IllegalFunction);
+                return (new byte[0], MbExceptionCode.IllegalFunction);
             }
 
             var maxCount = typeof(T) == typeof(bool) ? 0x07d0 : 0x007d;
 
             if (count < 1 || count > maxCount)
             {
-                return (new byte[0], ModbusExceptionCode.IllegalDataValue);
+                return (new byte[0], MbExceptionCode.IllegalDataValue);
             }
 
             try
             {
                 (var values, var exceptionCode) = onRead((ushort)address, (ushort)count);
 
-                if (exceptionCode != ModbusExceptionCode.Ok)
+                if (exceptionCode != MbExceptionCode.Ok)
                 {
                     return (new byte[0], exceptionCode);
                 }
 
                 if (values == null || values.Length == 0 || values.Length != count)
                 {
-                    return (new byte[0], ModbusExceptionCode.SlaveDeviceFailure);
+                    return (new byte[0], MbExceptionCode.SlaveDeviceFailure);
                 }
 
                 var bytes = unpack(values).ToArray();
 
-                return (bytes, ModbusExceptionCode.Ok);
+                return (bytes, MbExceptionCode.Ok);
             }
             catch (Exception ex)
             {
                 _logger.Error($"Unhandled exception in user supplied function {ex.Message}" +
                     ex.InnerException != null ? $", inner exception: {ex.InnerException.Message}" : string.Empty);
-                return (new byte[0], ModbusExceptionCode.SlaveDeviceFailure);
+                return (new byte[0], MbExceptionCode.SlaveDeviceFailure);
             }
 
         }
 
-        internal static (byte[], ModbusExceptionCode) ReadDigitals(int address, int count,
-            Func<ushort, ushort, (bool[], ModbusExceptionCode)> onRead)
+        internal static (byte[], MbExceptionCode) ReadDigitals(int address, int count,
+            Func<ushort, ushort, (bool[], MbExceptionCode)> onRead)
         {
             return Read(address, count, onRead, bools => bools.Chunk(8).Select(BooleansToByte));
         }
 
-        internal static (byte[], ModbusExceptionCode) ReadAnalogs(int address, int count,
-            Func<ushort, ushort, (ushort[], ModbusExceptionCode)> onRead)
+        internal static (byte[], MbExceptionCode) ReadAnalogs(int address, int count,
+            Func<ushort, ushort, (ushort[], MbExceptionCode)> onRead)
         {
             return Read(address, count, onRead, ushorts => ushorts.SelectMany(us => new byte[] { (byte)(us >> 8), (byte)(us & 0xff) }));
         }
 
 
-        internal static ModbusExceptionCode WriteCoils(int address, int count, byte[] input,
-            Func<ushort, bool[], ModbusExceptionCode> onWrite)
+        internal static MbExceptionCode WriteCoils(int address, int count, byte[] input,
+            Func<ushort, bool[], MbExceptionCode> onWrite)
         {
             if (onWrite == null || input == null || input.Length == 0)
             {
-                return ModbusExceptionCode.IllegalFunction;
+                return MbExceptionCode.IllegalFunction;
             }
 
             var bools = new bool[0];
@@ -111,7 +111,7 @@ namespace Kimbus.Slave
                 var value = (input[0] << 8) | input[1];
                 if (value != 0xff00 && value != 0x00000)
                 {
-                    return ModbusExceptionCode.IllegalDataValue;
+                    return MbExceptionCode.IllegalDataValue;
                 }
 
                 bools = new bool[] { value == 0xff00 };
@@ -122,7 +122,7 @@ namespace Kimbus.Slave
                     || (count > 0x07b0) 
                     || (input.Length != count / 8 + (count % 8 != 0 ? 1 : 0)))
                 {
-                    return ModbusExceptionCode.IllegalDataValue;
+                    return MbExceptionCode.IllegalDataValue;
                 }
 
                 bools = input.SelectMany(b => Enumerable.Range(0, 8).Select(n => (b & (1 << n)) != 0)).Take(count).ToArray();
@@ -136,23 +136,23 @@ namespace Kimbus.Slave
             {
                 _logger.Error($"Unhandled exception in user supplied function {ex.Message}" +
                     ex.InnerException != null ? $", inner exception: {ex.InnerException.Message}" : string.Empty);
-                return ModbusExceptionCode.SlaveDeviceFailure;
+                return MbExceptionCode.SlaveDeviceFailure;
             }
         }
 
-        internal static ModbusExceptionCode WriteHoldingRegisters(int address, int count, byte[] input,
-            Func<ushort, ushort[], ModbusExceptionCode> onWrite)
+        internal static MbExceptionCode WriteHoldingRegisters(int address, int count, byte[] input,
+            Func<ushort, ushort[], MbExceptionCode> onWrite)
         {
             if (onWrite == null || input == null || input.Length == 0)
             {
-                return ModbusExceptionCode.IllegalFunction;
+                return MbExceptionCode.IllegalFunction;
             }
 
             if ((count == 0)
                || (count > 0x007b)
                || (input.Length != count * 2))
             {
-                return ModbusExceptionCode.IllegalDataValue;
+                return MbExceptionCode.IllegalDataValue;
             }
 
             var ushorts = input.Chunk(2).Select(b => (ushort)(b.ElementAt(0) << 8 | b.ElementAt(1))).ToArray();
@@ -165,7 +165,7 @@ namespace Kimbus.Slave
             {
                 _logger.Error($"Unhandled exception in user supplied function {ex.Message}" +
                     ex.InnerException != null ? $", inner exception: {ex.InnerException.Message}" : string.Empty);
-                return ModbusExceptionCode.SlaveDeviceFailure;
+                return MbExceptionCode.SlaveDeviceFailure;
             }
         }
 

@@ -23,17 +23,17 @@ namespace Kimbus.Slave
 
         public int Port { get; }
 
-        public Func<ushort, ushort, (ushort[], ModbusExceptionCode)> OnReadHoldingRegisters { get; set; }
+        public Func<ushort, ushort, (ushort[], MbExceptionCode)> OnReadHoldingRegisters { get; set; }
 
-        public Func<ushort, ushort, (ushort[], ModbusExceptionCode)> OnReadInputRegisters { get; set; }
+        public Func<ushort, ushort, (ushort[], MbExceptionCode)> OnReadInputRegisters { get; set; }
 
-        public Func<ushort, ushort, (bool[], ModbusExceptionCode)> OnReadCoils { get; set; }
+        public Func<ushort, ushort, (bool[], MbExceptionCode)> OnReadCoils { get; set; }
 
-        public Func<ushort, ushort, (bool[], ModbusExceptionCode)> OnReadDiscretes { get; set; }
+        public Func<ushort, ushort, (bool[], MbExceptionCode)> OnReadDiscretes { get; set; }
 
-        public Func<ushort, ushort[], ModbusExceptionCode> OnWriteHoldingRegisters { get; set; }
+        public Func<ushort, ushort[], MbExceptionCode> OnWriteHoldingRegisters { get; set; }
 
-        public Func<ushort, bool[], ModbusExceptionCode> OnWriteCoils { get; set; }
+        public Func<ushort, bool[], MbExceptionCode> OnWriteCoils { get; set; }
 
         public int Timeout { get; set; } = 120000;
 
@@ -158,7 +158,7 @@ namespace Kimbus.Slave
         
         private byte[] Respond(byte[] request, int requestLength)
         {
-            var responseCode = ModbusExceptionCode.IllegalFunction;
+            var responseCode = MbExceptionCode.IllegalFunction;
             var response = new byte[0];
 
             if (requestLength > 8)
@@ -195,7 +195,7 @@ namespace Kimbus.Slave
                             count = (request[10] << 8) | request[11];
                             (responseData, responseCode) = ModbusFunctions.ReadDigitals(address, count, OnReadCoils);
 
-                            if (responseCode == ModbusExceptionCode.Ok)
+                            if (responseCode == MbExceptionCode.Ok)
                             {
                                 responseBuffer = new byte[2 + responseData.Length];
                                 responseBuffer[0] = functionCode;
@@ -211,7 +211,7 @@ namespace Kimbus.Slave
                             count = (request[10] << 8) | request[11];
                             (responseData, responseCode) = ModbusFunctions.ReadDigitals(address, count, OnReadDiscretes);
 
-                            if(responseCode == ModbusExceptionCode.Ok)
+                            if(responseCode == MbExceptionCode.Ok)
                             {
                                 responseBuffer = new byte[2 + responseData.Length];
                                 responseBuffer[0] = functionCode;
@@ -226,7 +226,7 @@ namespace Kimbus.Slave
                             address = (request[8] << 8) | request[9];
                             var inputBuffer = request.Skip(10).Take(2).ToArray();
                             responseCode = ModbusFunctions.WriteCoils(address, 1, inputBuffer, OnWriteCoils);
-                            if (responseCode == ModbusExceptionCode.Ok)
+                            if (responseCode == MbExceptionCode.Ok)
                             {
                                 responseBuffer = new byte[5];
                                 Array.Copy(request, 7, responseBuffer, 0, 5);
@@ -244,7 +244,7 @@ namespace Kimbus.Slave
                                 var inputBuffer = request.Skip(13).Take(byteCount).ToArray();
                                 responseCode = ModbusFunctions.WriteCoils(address, count, inputBuffer, OnWriteCoils);
 
-                                if (responseCode == ModbusExceptionCode.Ok)
+                                if (responseCode == MbExceptionCode.Ok)
                                 {
                                     responseBuffer = new byte[5];
                                     Array.Copy(request, 7, responseBuffer, 0, 5);
@@ -259,7 +259,7 @@ namespace Kimbus.Slave
                             count = (request[10] << 8) | request[11];
                             (responseData, responseCode) = ModbusFunctions.ReadAnalogs(address, count, OnReadHoldingRegisters);
 
-                            if (responseCode == ModbusExceptionCode.Ok)
+                            if (responseCode == MbExceptionCode.Ok)
                             {
                                 responseBuffer = new byte[2 + responseData.Length];
                                 responseBuffer[0] = functionCode;
@@ -273,7 +273,7 @@ namespace Kimbus.Slave
                         count = (request[10] << 8) | request[11];
                         (responseData, responseCode) = ModbusFunctions.ReadAnalogs(address, count, OnReadInputRegisters);
 
-                        if (responseCode == ModbusExceptionCode.Ok)
+                        if (responseCode == MbExceptionCode.Ok)
                         {
                             responseBuffer = new byte[2 + responseData.Length];
                             responseBuffer[0] = functionCode;
@@ -288,7 +288,7 @@ namespace Kimbus.Slave
                             var inputBuffer = request.Skip(10).Take(2).ToArray();
                             responseCode = ModbusFunctions.WriteHoldingRegisters(address, 1, inputBuffer, OnWriteHoldingRegisters);
 
-                            if (responseCode == ModbusExceptionCode.Ok)
+                            if (responseCode == MbExceptionCode.Ok)
                             {
                                 responseBuffer = new byte[5];
                                 Array.Copy(request, 7, responseBuffer, 0, 5);
@@ -306,7 +306,7 @@ namespace Kimbus.Slave
                                 var inputBuffer = request.Skip(13).Take(byteCount).ToArray();
                                 responseCode = ModbusFunctions.WriteHoldingRegisters(address, count, inputBuffer, OnWriteHoldingRegisters);
 
-                                if (responseCode == ModbusExceptionCode.Ok)
+                                if (responseCode == MbExceptionCode.Ok)
                                 {
                                     responseBuffer = new byte[5];
                                     Array.Copy(request, 7, responseBuffer, 0, 5);
@@ -316,7 +316,7 @@ namespace Kimbus.Slave
                         break;
                 }
 
-                if (responseCode != ModbusExceptionCode.Ok)
+                if (responseCode != MbExceptionCode.Ok)
                 {
                     response = ModbusFunctions.GenerateExceptionResponse(transId, unitId, functionCode, responseCode);
                 }
