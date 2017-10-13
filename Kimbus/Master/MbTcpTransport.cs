@@ -37,15 +37,16 @@ namespace Kimbus.Master
         private static List<byte> PrependMbapHeader(byte unitId, ushort transactionId, List<byte> pdu)
         {
             var header = new List<byte>()
-      {
-        BigNibble(transactionId),
-        LittleNibble(transactionId),
-        0x0,
-        0x0,
-        BigNibble((ushort)(pdu.Count + 1)),
-        LittleNibble((ushort)(pdu.Count + 1)),
-        unitId
-      };
+            {
+                BigNibble(transactionId),
+                LittleNibble(transactionId),
+                0x0,
+                0x0,
+                BigNibble((ushort)(pdu.Count + 1)),
+                LittleNibble((ushort)(pdu.Count + 1)),
+                unitId
+            };
+
             header.AddRange(pdu);
             return header;
         }
@@ -136,7 +137,9 @@ namespace Kimbus.Master
         public Try<bool> Send(byte unitId, List<byte> adu)
         {
             if (!_socket.Connected)
+            {
                 return Try.Failure<bool>(new SocketException((int)SocketError.NotConnected));
+            }
 
             if (_socket.Poll(0, SelectMode.SelectRead))
             {
