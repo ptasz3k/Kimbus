@@ -28,18 +28,6 @@ namespace Kimbus.Slave
             return response;
         }
 
-        private static byte BooleansToByte(IEnumerable<bool> bools)
-        {
-            if (bools == null) throw new ArgumentNullException("bools");
-
-            var boolist = bools.ToList();
-
-            if (boolist.Count > 8) throw new ArgumentException("Cannot convert more than 8 bools to MbByte");
-
-            return Enumerable.Range(0, boolist.Count)
-              .Zip(boolist, (n, b) => (b ? 1 : 0) << n)
-              .Aggregate<int, byte>(0, (acc, bit) => (byte)(acc | bit));
-        }
 
         internal static (byte[], MbExceptionCode) Read<T>(int address, int count,
             Func<ushort, ushort, (T[], MbExceptionCode)> onRead, Func<IEnumerable<T>, IEnumerable<byte>> unpack)
@@ -86,7 +74,7 @@ namespace Kimbus.Slave
         internal static (byte[], MbExceptionCode) ReadDigitals(int address, int count,
             Func<ushort, ushort, (bool[], MbExceptionCode)> onRead)
         {
-            return Read(address, count, onRead, bools => bools.Chunk(8).Select(BooleansToByte));
+            return Read(address, count, onRead, bools => bools.Chunk(8).Select(MbHelpers.BooleansToByte));
         }
 
         internal static (byte[], MbExceptionCode) ReadAnalogs(int address, int count,

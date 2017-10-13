@@ -31,5 +31,23 @@ namespace Kimbus.Helpers
             return (transId, unitId, adu.Skip(7).ToList());
         }
 
+        internal static byte BooleansToByte(IEnumerable<bool> bools)
+        {
+            if (bools == null)
+            {
+                throw new ArgumentNullException(nameof(bools));
+            }
+
+            var boolist = bools.ToList();
+
+            if (boolist.Count > 8)
+            {
+                throw new ArgumentException("Cannot convert more than 8 bools to byte", nameof(bools));
+            }
+
+            return Enumerable.Range(0, boolist.Count)
+              .Zip(boolist, (n, b) => (b ? 1 : 0) << n)
+              .Aggregate<int, byte>(0, (acc, bit) => (byte)(acc | bit));
+        }
     }
 }

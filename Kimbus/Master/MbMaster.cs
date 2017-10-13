@@ -22,23 +22,6 @@ namespace Kimbus.Master
             _mbTransport = transport;
         }
 
-        private static byte ToMbByte(IEnumerable<bool> bools)
-        {
-            if (bools == null)
-            {
-                throw new ArgumentNullException(nameof(bools));
-            }
-
-            var boolist = bools.ToList();
-
-            if (boolist.Count > 8) throw new ArgumentException("Cannot convert more than 8 bools to MbByte", nameof(bools));
-
-            var byt = Enumerable.Range(0, boolist.Count)
-              .Zip(boolist, (n, b) => (b ? 1 : 0) << n)
-              .Aggregate<int, byte>(0, (acc, bit) => (byte)(acc | bit));
-            return byt;
-        }
-
         internal static List<byte> CreateReadPdu(MbFunctionCode fun, ushort address, ushort count)
         {
             if (count == 0)
@@ -102,7 +85,7 @@ namespace Kimbus.Master
                 throw new ArgumentOutOfRangeException("Cannot send more than 1968 coils in one query", nameof(values));
             }
 
-            var bytes = values.Chunk(8).Select(ToMbByte).ToList();
+            var bytes = values.Chunk(8).Select(MbHelpers.BooleansToByte).ToList();
 
             var pdu = new List<byte>()
             {

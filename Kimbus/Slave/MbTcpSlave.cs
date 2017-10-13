@@ -12,17 +12,19 @@ namespace Kimbus.Slave
 {
     public class MbTcpSlave
     {
-        private Logger _logger = LogManager.GetCurrentClassLogger();
+        private readonly Logger _logger = LogManager.GetCurrentClassLogger();
 
-        private object _lock = new Object();
+        private readonly object _lock = new Object();
 
-        private List<Task> _connections = new List<Task>();
+        private readonly List<Task> _connections = new List<Task>();
 
         private TcpListener _listener;
 
         public IPAddress IpAddress { get; }
 
         public int Port { get; }
+
+        public int Timeout { get; }
 
         public Func<ushort, ushort, (ushort[], MbExceptionCode)> OnReadHoldingRegisters { get; set; }
 
@@ -35,8 +37,6 @@ namespace Kimbus.Slave
         public Func<ushort, ushort[], MbExceptionCode> OnWriteHoldingRegisters { get; set; }
 
         public Func<ushort, bool[], MbExceptionCode> OnWriteCoils { get; set; }
-
-        public int Timeout { get; }
 
         public MbTcpSlave(string ipAddress, int port = 502, int timeout = 120000)
         {
