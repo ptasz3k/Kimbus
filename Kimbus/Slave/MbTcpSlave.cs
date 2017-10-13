@@ -133,11 +133,16 @@ namespace Kimbus.Slave
                 {
                     var buffer = new byte[1024];
                     var timeout = false;
-                    var cts = new CancellationTokenSource();
-                    var byteCount = (await Task.WhenAny(
-                        networkStream.ReadAsync(buffer, 0, buffer.Length).ContinueWith(t => { cts.Cancel(); return t.Result; }),
-                        Task.Delay(Timeout, cts.Token).ContinueWith(t => { timeout = !t.IsCanceled; return 0; }))
-                        ).Result;
+                    var byteCount = 0;
+
+                    using (var cts = new CancellationTokenSource())
+                    {
+                        byteCount = (await Task.WhenAny(
+                            networkStream.ReadAsync(buffer, 0, buffer.Length).ContinueWith(t => { cts.Cancel(); return t.Result; }),
+                            Task.Delay(Timeout, cts.Token).ContinueWith(t => { timeout = !t.IsCanceled; return 0; }))
+                            ).Result;
+                    }
+
                     if (byteCount == 0)
                     {
                         if (timeout)
