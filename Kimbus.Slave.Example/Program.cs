@@ -10,7 +10,7 @@ namespace Kimbus.Slave.Example
 
             var mbSlave = new MbTcpSlave("*", 502);
 
-            mbSlave.OnWriteCoils = (start, bools) =>
+            mbSlave.OnWriteCoils = (_, start, bools) =>
             {
                 Console.WriteLine("Write coils at {0}, len: {1}", start, bools.Length);
 
@@ -22,7 +22,7 @@ namespace Kimbus.Slave.Example
                 return MbExceptionCode.Ok;
             };
 
-            mbSlave.OnWriteHoldingRegisters = (start, hrs) =>
+            mbSlave.OnWriteHoldingRegisters = (_, start, hrs) =>
             {
                 Console.WriteLine("Write holding registers at {0}, len: {1}", start, hrs.Length);
 
@@ -35,7 +35,7 @@ namespace Kimbus.Slave.Example
 
             };
 
-            mbSlave.OnReadHoldingRegisters = (start, count) =>
+            mbSlave.OnReadHoldingRegisters = (_, start, count) =>
             {
                 var buffer = new ushort[count];
 
@@ -49,7 +49,7 @@ namespace Kimbus.Slave.Example
             mbSlave.OnReadInputRegisters = mbSlave.OnReadHoldingRegisters;
 
 
-            mbSlave.OnReadCoils = (start, count) =>
+            mbSlave.OnReadCoils = (_, start, count) =>
             {
                 var buffer = new bool[count];
 
@@ -65,11 +65,12 @@ namespace Kimbus.Slave.Example
 
             mbSlave.Listen();
 
-            //using (var mbMaster = new Master.MbMaster(new Master.MbTcpTransport("127.0.0.1", 502)))
-            //{
-            //    mbMaster.Open();
-            //    var result = mbMaster.ReadCoils(0, 999, 1200);
-            //}
+            using (var mbMaster = new Master.MbMaster(new Master.MbTcpTransport("127.0.0.1", 502)))
+            {
+                mbMaster.Open();
+                var result = mbMaster.ReadCoils(0, 999, 1200);
+                ;
+            }
 
             Console.ReadLine();
         }

@@ -29,8 +29,8 @@ namespace Kimbus.Slave
         }
 
 
-        internal static (byte[], MbExceptionCode) Read<T>(int address, int count,
-            Func<ushort, ushort, (T[], MbExceptionCode)> onRead, Func<IEnumerable<T>, IEnumerable<byte>> unpack)
+        internal static (byte[], MbExceptionCode) Read<T>(byte unitId, ushort address, ushort count,
+            Func<byte, ushort, ushort, (T[], MbExceptionCode)> onRead, Func<IEnumerable<T>, IEnumerable<byte>> unpack)
         {
             if (onRead == null)
             {
@@ -46,7 +46,7 @@ namespace Kimbus.Slave
 
             try
             {
-                (var values, var exceptionCode) = onRead((ushort)address, (ushort)count);
+                (var values, var exceptionCode) = onRead(unitId, address, count);
 
                 if (exceptionCode != MbExceptionCode.Ok)
                 {
@@ -71,21 +71,21 @@ namespace Kimbus.Slave
 
         }
 
-        internal static (byte[], MbExceptionCode) ReadDigitals(int address, int count,
-            Func<ushort, ushort, (bool[], MbExceptionCode)> onRead)
+        internal static (byte[], MbExceptionCode) ReadDigitals(byte unitId, ushort address, ushort count,
+            Func<byte, ushort, ushort, (bool[], MbExceptionCode)> onRead)
         {
-            return Read(address, count, onRead, bools => bools.Chunk(8).Select(MbHelpers.BooleansToByte));
+            return Read(unitId, address, count, onRead, bools => bools.Chunk(8).Select(MbHelpers.BooleansToByte));
         }
 
-        internal static (byte[], MbExceptionCode) ReadAnalogs(int address, int count,
-            Func<ushort, ushort, (ushort[], MbExceptionCode)> onRead)
+        internal static (byte[], MbExceptionCode) ReadAnalogs(byte unitId, ushort address, ushort count,
+            Func<byte, ushort, ushort, (ushort[], MbExceptionCode)> onRead)
         {
-            return Read(address, count, onRead, ushorts => ushorts.SelectMany(us => new byte[] { (byte)(us >> 8), (byte)(us & 0xff) }));
+            return Read(unitId, address, count, onRead, ushorts => ushorts.SelectMany(us => new byte[] { (byte)(us >> 8), (byte)(us & 0xff) }));
         }
 
 
-        internal static MbExceptionCode WriteCoils(int address, int count, byte[] input,
-            Func<ushort, bool[], MbExceptionCode> onWrite)
+        internal static MbExceptionCode WriteCoils(byte unitId, ushort address, ushort count, byte[] input,
+            Func<byte, ushort, bool[], MbExceptionCode> onWrite)
         {
             if (onWrite == null || input == null || input.Length == 0)
             {
@@ -118,7 +118,7 @@ namespace Kimbus.Slave
 
             try
             {
-                return onWrite((ushort)address, bools);
+                return onWrite(unitId, address, bools);
             }
             catch (Exception ex)
             {
@@ -128,8 +128,8 @@ namespace Kimbus.Slave
             }
         }
 
-        internal static MbExceptionCode WriteHoldingRegisters(int address, int count, byte[] input,
-            Func<ushort, ushort[], MbExceptionCode> onWrite)
+        internal static MbExceptionCode WriteHoldingRegisters(byte unitId, ushort address, ushort count, byte[] input,
+            Func<byte, ushort, ushort[], MbExceptionCode> onWrite)
         {
             if (onWrite == null || input == null || input.Length == 0)
             {
@@ -147,7 +147,7 @@ namespace Kimbus.Slave
 
             try
             {
-                return onWrite((ushort)address, ushorts);
+                return onWrite(unitId, address, ushorts);
             }
             catch (Exception ex)
             {

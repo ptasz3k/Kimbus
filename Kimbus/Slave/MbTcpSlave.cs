@@ -20,23 +20,50 @@ namespace Kimbus.Slave
 
         private TcpListener _listener;
 
+        /* IP address of server */
         public IPAddress IpAddress { get; }
 
+        /* Listening port */
         public int Port { get; }
 
+        /* Time after which server closes inactive connection */
         public int Timeout { get; }
 
-        public Func<ushort, ushort, (ushort[], MbExceptionCode)> OnReadHoldingRegisters { get; set; }
+        /// <summary>
+        /// (unitId, address, count) => (return_values, status)
+        /// Callback function for read holding register request.
+        /// </summary>
+        public Func<byte, ushort, ushort, (ushort[], MbExceptionCode)> OnReadHoldingRegisters { get; set; }
 
-        public Func<ushort, ushort, (ushort[], MbExceptionCode)> OnReadInputRegisters { get; set; }
+        /// <summary>
+        /// (unitId, address, count) => (return_values, status)
+        /// Callback function for read input register request.
+        /// </summary>
+        public Func<byte, ushort, ushort, (ushort[], MbExceptionCode)> OnReadInputRegisters { get; set; }
 
-        public Func<ushort, ushort, (bool[], MbExceptionCode)> OnReadCoils { get; set; }
+        /// <summary>
+        /// (unitId, address, count) => (return_values, status)
+        /// Callback function for read coils request.
+        /// </summary>
+        public Func<byte, ushort, ushort, (bool[], MbExceptionCode)> OnReadCoils { get; set; }
 
-        public Func<ushort, ushort, (bool[], MbExceptionCode)> OnReadDiscretes { get; set; }
+        /// <summary>
+        /// (unitId, address, count) => (return_values, status)
+        /// Callback function for read discretes request.
+        /// </summary>
+        public Func<byte, ushort, ushort, (bool[], MbExceptionCode)> OnReadDiscretes { get; set; }
 
-        public Func<ushort, ushort[], MbExceptionCode> OnWriteHoldingRegisters { get; set; }
+        /// <summary>
+        /// (unitId, address, values_to_store) => status
+        /// Callback function for write holding registers request.
+        /// </summary>
+        public Func<byte, ushort, ushort[], MbExceptionCode> OnWriteHoldingRegisters { get; set; }
 
-        public Func<ushort, bool[], MbExceptionCode> OnWriteCoils { get; set; }
+        /// <summary>
+        /// (unitId, address, values_to_store) => status
+        /// Callback function for write coils request.
+        /// </summary>
+        public Func<byte, ushort, bool[], MbExceptionCode> OnWriteCoils { get; set; }
 
         public MbTcpSlave(string ipAddress, int port = 502, int timeout = 120000)
         {
@@ -69,6 +96,10 @@ namespace Kimbus.Slave
 
         }
 
+        /// <summary>
+        /// Start server
+        /// </summary>
+        /// <returns></returns>
         public Task Listen()
         {
             return Task.Run(async () =>
@@ -192,8 +223,8 @@ namespace Kimbus.Slave
                 }
 
                 var functionCode = request[7];
-                var address = 65536;
-                var count = 0;
+                ushort address = 65535;
+                ushort count = 0;
 
                 /* FIXME: rationalize response creation code */
                 var responseBuffer = new byte[0];
@@ -203,9 +234,9 @@ namespace Kimbus.Slave
                     case MbFunctionCode.ReadCoils:
                         if (requestLength == 12)
                         {
-                            address = (request[8] << 8) | request[9];
-                            count = (request[10] << 8) | request[11];
-                            (responseData, responseCode) = ModbusFunctions.ReadDigitals(address, count, OnReadCoils);
+                            address = (ushort)((request[8] << 8) | request[9]);
+                            count = (ushort)((request[10] << 8) | request[11]);
+                            (responseData, responseCode) = ModbusFunctions.ReadDigitals(unitId, address, count, OnReadCoils);
 
                             if (responseCode == MbExceptionCode.Ok)
                             {
@@ -219,9 +250,9 @@ namespace Kimbus.Slave
                     case MbFunctionCode.ReadDiscreteInputs:
                         if (requestLength == 12)
                         {
-                            address = (request[8] << 8) | request[9];
-                            count = (request[10] << 8) | request[11];
-                            (responseData, responseCode) = ModbusFunctions.ReadDigitals(address, count, OnReadDiscretes);
+                            address = (ushort)((request[8] << 8) | request[9]);
+                            count = (ushort)((request[10] << 8) | request[11]);
+                            (responseData, responseCode) = ModbusFunctions.ReadDigitals(unitId, address, count, OnReadDiscretes);
 
                             if(responseCode == MbExceptionCode.Ok)
                             {
@@ -235,9 +266,9 @@ namespace Kimbus.Slave
                     case MbFunctionCode.WriteSingleCoil:
                         if (requestLength == 12)
                         {
-                            address = (request[8] << 8) | request[9];
+                            address = (ushort)((request[8] << 8) | request[9]);
                             var inputBuffer = request.Skip(10).Take(2).ToArray();
-                            responseCode = ModbusFunctions.WriteCoils(address, 1, inputBuffer, OnWriteCoils);
+                            responseCode = ModbusFunctions.WriteCoils(unitId, address, 1, inputBuffer, OnWriteCoils);
                             if (responseCode == MbExceptionCode.Ok)
                             {
                                 responseBuffer = new byte[5];
@@ -248,13 +279,13 @@ namespace Kimbus.Slave
                     case MbFunctionCode.WriteMultipleCoils:
                         if (requestLength > 13)
                         {
-                            address = (request[8] << 8) | request[9];
-                            count = (request[10] << 8) | request[11];
+                            address = (ushort)((request[8] << 8) | request[9]);
+                            count = (ushort)((request[10] << 8) | request[11]);
                             var byteCount = request[12];
                             if (requestLength == byteCount + 13)
                             {
                                 var inputBuffer = request.Skip(13).Take(byteCount).ToArray();
-                                responseCode = ModbusFunctions.WriteCoils(address, count, inputBuffer, OnWriteCoils);
+                                responseCode = ModbusFunctions.WriteCoils(unitId, address, count, inputBuffer, OnWriteCoils);
 
                                 if (responseCode == MbExceptionCode.Ok)
                                 {
@@ -267,9 +298,9 @@ namespace Kimbus.Slave
                     case MbFunctionCode.ReadHoldingRegisters:
                         if (requestLength == 12)
                         {
-                            address = (request[8] << 8) | request[9];
-                            count = (request[10] << 8) | request[11];
-                            (responseData, responseCode) = ModbusFunctions.ReadAnalogs(address, count, OnReadHoldingRegisters);
+                            address = (ushort)((request[8] << 8) | request[9]);
+                            count = (ushort)((request[10] << 8) | request[11]);
+                            (responseData, responseCode) = ModbusFunctions.ReadAnalogs(unitId, address, count, OnReadHoldingRegisters);
 
                             if (responseCode == MbExceptionCode.Ok)
                             {
@@ -281,9 +312,9 @@ namespace Kimbus.Slave
                         }
                         break;
                     case MbFunctionCode.ReadInputRegisters:
-                        address = (request[8] << 8) | request[9];
-                        count = (request[10] << 8) | request[11];
-                        (responseData, responseCode) = ModbusFunctions.ReadAnalogs(address, count, OnReadInputRegisters);
+                        address = (ushort)((request[8] << 8) | request[9]);
+                        count = (ushort)((request[10] << 8) | request[11]);
+                        (responseData, responseCode) = ModbusFunctions.ReadAnalogs(unitId, address, count, OnReadInputRegisters);
 
                         if (responseCode == MbExceptionCode.Ok)
                         {
@@ -296,9 +327,9 @@ namespace Kimbus.Slave
                     case MbFunctionCode.WriteSingleRegister:
                         if (requestLength == 12)
                         {
-                            address = (request[8] << 8) | request[9];
+                            address = (ushort)((request[8] << 8) | request[9]);
                             var inputBuffer = request.Skip(10).Take(2).ToArray();
-                            responseCode = ModbusFunctions.WriteHoldingRegisters(address, 1, inputBuffer, OnWriteHoldingRegisters);
+                            responseCode = ModbusFunctions.WriteHoldingRegisters(unitId, address, 1, inputBuffer, OnWriteHoldingRegisters);
 
                             if (responseCode == MbExceptionCode.Ok)
                             {
@@ -310,13 +341,13 @@ namespace Kimbus.Slave
                     case MbFunctionCode.WriteMultipleRegisters:
                         if (requestLength > 13)
                         {
-                            address = (request[8] << 8) | request[9];
-                            count = (request[10] << 8) | request[11];
+                            address = (ushort)((request[8] << 8) | request[9]);
+                            count = (ushort)((request[10] << 8) | request[11]);
                             var byteCount = request[12];
                             if (requestLength == byteCount + 13)
                             {
                                 var inputBuffer = request.Skip(13).Take(byteCount).ToArray();
-                                responseCode = ModbusFunctions.WriteHoldingRegisters(address, count, inputBuffer, OnWriteHoldingRegisters);
+                                responseCode = ModbusFunctions.WriteHoldingRegisters(unitId, address, count, inputBuffer, OnWriteHoldingRegisters);
 
                                 if (responseCode == MbExceptionCode.Ok)
                                 {
@@ -340,7 +371,5 @@ namespace Kimbus.Slave
 
             return response;
         }
-
-        
     }
 }
