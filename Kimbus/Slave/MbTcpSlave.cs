@@ -357,6 +357,9 @@ namespace Kimbus.Slave
                             }
                         }
                         break;
+                    default:
+                        /* TODO: code for user supplied custom functions */
+                        break;
                 }
 
                 if (responseCode != MbExceptionCode.Ok)
