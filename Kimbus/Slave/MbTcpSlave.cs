@@ -222,7 +222,7 @@ namespace Kimbus.Slave
                     _logger.Error($"Error while processing MBAP header: {ex.Message}");
                 }
 
-                var functionCode = request[7];
+                var functionCode = pdu[0];
                 ushort address = 65535;
                 ushort count = 0;
 
@@ -232,10 +232,10 @@ namespace Kimbus.Slave
                 switch ((MbFunctionCode)functionCode)
                 {
                     case MbFunctionCode.ReadCoils:
-                        if (requestLength == 12)
+                        if (pdu.Count == 5)
                         {
-                            address = (ushort)((request[8] << 8) | request[9]);
-                            count = (ushort)((request[10] << 8) | request[11]);
+                            address = (ushort)((pdu[1] << 8) | pdu[2]);
+                            count = (ushort)((pdu[3] << 8) | pdu[4]);
                             (responseData, responseCode) = ModbusFunctions.ReadDigitals(unitId, address, count, OnReadCoils);
 
                             if (responseCode == MbExceptionCode.Ok)
@@ -248,10 +248,10 @@ namespace Kimbus.Slave
                         }
                         break;
                     case MbFunctionCode.ReadDiscreteInputs:
-                        if (requestLength == 12)
+                        if (pdu.Count == 5)
                         {
-                            address = (ushort)((request[8] << 8) | request[9]);
-                            count = (ushort)((request[10] << 8) | request[11]);
+                            address = (ushort)((pdu[1] << 8) | pdu[2]);
+                            count = (ushort)((pdu[3] << 8) | pdu[4]);
                             (responseData, responseCode) = ModbusFunctions.ReadDigitals(unitId, address, count, OnReadDiscretes);
 
                             if(responseCode == MbExceptionCode.Ok)
@@ -264,42 +264,39 @@ namespace Kimbus.Slave
                         }
                         break;
                     case MbFunctionCode.WriteSingleCoil:
-                        if (requestLength == 12)
+                        if (pdu.Count == 5)
                         {
-                            address = (ushort)((request[8] << 8) | request[9]);
-                            var inputBuffer = request.Skip(10).Take(2).ToArray();
-                            responseCode = ModbusFunctions.WriteCoils(unitId, address, 1, inputBuffer, OnWriteCoils);
+                            address = (ushort)((pdu[1] << 8) | pdu[2]);
+                            responseCode = ModbusFunctions.WriteCoils(unitId, address, 1, pdu.Skip(3).ToArray(), OnWriteCoils);
                             if (responseCode == MbExceptionCode.Ok)
                             {
-                                responseBuffer = new byte[5];
-                                Array.Copy(request.ToArray(), 7, responseBuffer, 0, 5);
+                                responseBuffer = pdu.ToArray();
                             }
                         }
                         break;
                     case MbFunctionCode.WriteMultipleCoils:
-                        if (requestLength > 13)
+                        if (pdu.Count > 6)
                         {
-                            address = (ushort)((request[8] << 8) | request[9]);
-                            count = (ushort)((request[10] << 8) | request[11]);
-                            var byteCount = request[12];
-                            if (requestLength == byteCount + 13)
+                            address = (ushort)((pdu[1] << 8) | pdu[2]);
+                            count = (ushort)((pdu[3] << 8) | pdu[4]);
+                            var byteCount = pdu[5];
+                            if (pdu.Count == byteCount + 6)
                             {
-                                var inputBuffer = request.Skip(13).Take(byteCount).ToArray();
+                                var inputBuffer = pdu.Skip(6).Take(byteCount).ToArray();
                                 responseCode = ModbusFunctions.WriteCoils(unitId, address, count, inputBuffer, OnWriteCoils);
 
                                 if (responseCode == MbExceptionCode.Ok)
                                 {
-                                    responseBuffer = new byte[5];
-                                    Array.Copy(request.ToArray(), 7, responseBuffer, 0, 5);
+                                    responseBuffer = pdu.Take(5).ToArray();
                                 }
                             }
                         }
                         break;
                     case MbFunctionCode.ReadHoldingRegisters:
-                        if (requestLength == 12)
+                        if (pdu.Count == 5)
                         {
-                            address = (ushort)((request[8] << 8) | request[9]);
-                            count = (ushort)((request[10] << 8) | request[11]);
+                            address = (ushort)((pdu[1] << 8) | pdu[2]);
+                            count = (ushort)((pdu[3] << 8) | pdu[4]);
                             (responseData, responseCode) = ModbusFunctions.ReadAnalogs(unitId, address, count, OnReadHoldingRegisters);
 
                             if (responseCode == MbExceptionCode.Ok)
@@ -312,47 +309,48 @@ namespace Kimbus.Slave
                         }
                         break;
                     case MbFunctionCode.ReadInputRegisters:
-                        address = (ushort)((request[8] << 8) | request[9]);
-                        count = (ushort)((request[10] << 8) | request[11]);
-                        (responseData, responseCode) = ModbusFunctions.ReadAnalogs(unitId, address, count, OnReadInputRegisters);
-
-                        if (responseCode == MbExceptionCode.Ok)
+                        if (pdu.Count == 5)
                         {
-                            responseBuffer = new byte[2 + responseData.Length];
-                            responseBuffer[0] = functionCode;
-                            responseBuffer[1] = (byte)responseData.Length;
-                            Array.Copy(responseData, 0, responseBuffer, 2, responseData.Length);
+                            address = (ushort)((pdu[1] << 8) | pdu[2]);
+                            count = (ushort)((pdu[3] << 8) | pdu[4]);
+                            (responseData, responseCode) = ModbusFunctions.ReadAnalogs(unitId, address, count, OnReadInputRegisters);
+
+                            if (responseCode == MbExceptionCode.Ok)
+                            {
+                                responseBuffer = new byte[2 + responseData.Length];
+                                responseBuffer[0] = functionCode;
+                                responseBuffer[1] = (byte)responseData.Length;
+                                Array.Copy(responseData, 0, responseBuffer, 2, responseData.Length);
+                            }
                         }
                         break;
                     case MbFunctionCode.WriteSingleRegister:
-                        if (requestLength == 12)
+                        if (pdu.Count == 5)
                         {
-                            address = (ushort)((request[8] << 8) | request[9]);
-                            var inputBuffer = request.Skip(10).Take(2).ToArray();
+                            address = (ushort)((pdu[1] << 8) | pdu[2]);
+                            var inputBuffer = pdu.Skip(3).ToArray();
                             responseCode = ModbusFunctions.WriteHoldingRegisters(unitId, address, 1, inputBuffer, OnWriteHoldingRegisters);
 
                             if (responseCode == MbExceptionCode.Ok)
                             {
-                                responseBuffer = new byte[5];
-                                Array.Copy(request.ToArray(), 7, responseBuffer, 0, 5);
+                                responseBuffer = pdu.ToArray();
                             }
                         }
                         break;
                     case MbFunctionCode.WriteMultipleRegisters:
-                        if (requestLength > 13)
+                        if (pdu.Count > 6)
                         {
-                            address = (ushort)((request[8] << 8) | request[9]);
-                            count = (ushort)((request[10] << 8) | request[11]);
-                            var byteCount = request[12];
-                            if (requestLength == byteCount + 13)
+                            address = (ushort)((pdu[1] << 8) | pdu[2]);
+                            count = (ushort)((pdu[3] << 8) | pdu[4]);
+                            var byteCount = pdu[5];
+                            if (pdu.Count == byteCount + 6)
                             {
-                                var inputBuffer = request.Skip(13).Take(byteCount).ToArray();
+                                var inputBuffer = pdu.Skip(6).ToArray();
                                 responseCode = ModbusFunctions.WriteHoldingRegisters(unitId, address, count, inputBuffer, OnWriteHoldingRegisters);
 
                                 if (responseCode == MbExceptionCode.Ok)
                                 {
-                                    responseBuffer = new byte[5];
-                                    Array.Copy(request.ToArray(), 7, responseBuffer, 0, 5);
+                                    responseBuffer = pdu.Take(5).ToArray();
                                 }
                             }
                         }
