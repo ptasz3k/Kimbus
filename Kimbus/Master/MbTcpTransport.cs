@@ -34,23 +34,6 @@ namespace Kimbus.Master
             return (byte)(val >> 8);
         }
 
-        private static List<byte> PrependMbapHeader(byte unitId, ushort transactionId, List<byte> pdu)
-        {
-            var header = new List<byte>()
-            {
-                BigNibble(transactionId),
-                LittleNibble(transactionId),
-                0x0,
-                0x0,
-                BigNibble((ushort)(pdu.Count + 1)),
-                LittleNibble((ushort)(pdu.Count + 1)),
-                unitId
-            };
-
-            header.AddRange(pdu);
-            return header;
-        }
-
         public MbTcpTransport(string ip, ushort port, int timeout = 10000)
         {
             _eventArgs = new SocketAsyncEventArgs();
@@ -153,8 +136,8 @@ namespace Kimbus.Master
             Func<Task> send = async () => await _socket.SendAsync(_awaitable);
 
             var result =
-              from pdu in Try.Apply(() => PrependMbapHeader(unitId, this._transactionId, adu))
-              from set in Try.Apply(() => _eventArgs.SetBuffer(pdu.ToArray(), 0, pdu.Count()))
+              from pdu in Try.Apply(() => MbHelpers.PrependMbapHeader(unitId, _transactionId, adu))
+              from set in Try.Apply(() => _eventArgs.SetBuffer(pdu.ToArray(), 0, pdu.Count))
               from snd in Try.Apply(() => send().Wait())
               select _eventArgs.BytesTransferred > 0;
 

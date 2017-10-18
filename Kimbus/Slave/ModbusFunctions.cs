@@ -10,23 +10,6 @@ namespace Kimbus.Slave
     {
         private static Logger _logger = LogManager.GetCurrentClassLogger();
 
-        internal static byte[] GenerateExceptionResponse(int transId, byte unitId, int functionCode, MbExceptionCode responseCode)
-        {
-            var function = (byte)(functionCode | 0x80);
-            var exceptionCode = (byte)responseCode;
-            var response = new byte[9];
-            response[0] = (byte)(transId >> 8);
-            response[1] = (byte)transId;
-            response[2] = 0;
-            response[3] = 0;
-            response[4] = 0;
-            response[5] = 3;
-            response[6] = unitId;
-            response[7] = function;
-            response[8] = exceptionCode;
-
-            return response;
-        }
 
 
         internal static (byte[], MbExceptionCode) Read<T>(byte unitId, ushort address, ushort count,
@@ -155,29 +138,6 @@ namespace Kimbus.Slave
                     ex.InnerException != null ? $", inner exception: {ex.InnerException.Message}" : string.Empty);
                 return MbExceptionCode.SlaveDeviceFailure;
             }
-        }
-
-        /// <summary>
-        /// Prepend modbus response with MBAP header
-        /// </summary>
-        /// <param name="transId"></param>
-        /// <param name="unitId"></param>
-        /// <param name="functionCode"></param>
-        /// <param name="responseBuffer"></param>
-        /// <returns></returns>
-        internal static byte[] GenerateResponse(int transId, byte unitId, byte functionCode, byte[] responseBuffer)
-        {
-            var response = new byte[7 + responseBuffer.Length];
-            response[0] = (byte)(transId >> 8);
-            response[1] = (byte)(transId & 0xff);
-            response[2] = 0;
-            response[3] = 0;
-            response[4] = (byte)((responseBuffer.Length + 1) >> 8);
-            response[5] = (byte)((responseBuffer.Length + 1) & 0xff);
-            response[6] = unitId;
-            Array.Copy(responseBuffer, 0, response, 7, responseBuffer.Length);
-
-            return response;
         }
     }
 }

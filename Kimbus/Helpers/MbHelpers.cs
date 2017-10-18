@@ -4,8 +4,26 @@ using System.Linq;
 
 namespace Kimbus.Helpers
 {
-    internal static class MbHelpers
+    static class MbHelpers
     {
+
+        internal static List<byte> PrependMbapHeader(byte unitId, ushort transactionId, List<byte> pdu)
+        {
+            var header = new List<byte>()
+            {
+                (byte)(transactionId >> 8),
+                (byte)(transactionId & 0xff),
+                0x0,
+                0x0,
+                (byte)((pdu.Count + 1) >> 8),
+                (byte)((pdu.Count + 1) & 0xff),
+                unitId
+            };
+
+            header.AddRange(pdu);
+            return header;
+        }
+
         internal static (ushort transId, byte unitId, List<byte> pdu) UnwrapMbapHeader(List<byte> adu)
         {
             if (adu == null || adu.Count < 7)

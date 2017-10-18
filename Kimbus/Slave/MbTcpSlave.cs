@@ -65,6 +65,24 @@ namespace Kimbus.Slave
         /// </summary>
         public Func<byte, ushort, bool[], MbExceptionCode> OnWriteCoils { get; set; }
 
+        private static List<byte> GenerateExceptionResponse(int transId, byte unitId, int functionCode, MbExceptionCode responseCode)
+        {
+            var response = new List<byte>
+            {
+                (byte)(transId >> 8),
+                (byte)(transId & 0xff),
+                0,
+                0,
+                0,
+                3,
+                unitId,
+                (byte)(functionCode | 0x80),
+                (byte)responseCode
+            };
+
+            return response;
+        }
+
         public MbTcpSlave(string ipAddress, int port = 502, int timeout = 120000)
         {
             IPAddress addr;
@@ -197,21 +215,19 @@ namespace Kimbus.Slave
                     await networkStream.WriteAsync(response, 0, response.Length);
                 }
             }
-            
+
             tcpClient.Close();
         }
-        
+
         private byte[] Respond(List<byte> request)
         {
-            var requestLength = request.Count;
-            var responseCode = MbExceptionCode.IllegalFunction;
-            var response = new byte[0];
 
-            if (requestLength > 8)
+            if (request.Count > 8)
             {
                 ushort transId = 0;
                 byte unitId = 0;
                 var pdu = new List<byte>();
+                var responseCode = MbExceptionCode.IllegalFunction;
 
                 try
                 {
@@ -227,7 +243,7 @@ namespace Kimbus.Slave
                 ushort count = 0;
 
                 /* FIXME: rationalize response creation code */
-                var responseBuffer = new byte[0];
+                var responsePdu = new List<byte>();
                 var responseData = new byte[0];
                 switch ((MbFunctionCode)functionCode)
                 {
@@ -240,10 +256,9 @@ namespace Kimbus.Slave
 
                             if (responseCode == MbExceptionCode.Ok)
                             {
-                                responseBuffer = new byte[2 + responseData.Length];
-                                responseBuffer[0] = functionCode;
-                                responseBuffer[1] = (byte)responseData.Length;
-                                Array.Copy(responseData, 0, responseBuffer, 2, responseData.Length);
+                                responsePdu.Add(functionCode);
+                                responsePdu.Add((byte)responseData.Length);
+                                responsePdu.AddRange(responseData);
                             }
                         }
                         break;
@@ -254,12 +269,11 @@ namespace Kimbus.Slave
                             count = (ushort)((pdu[3] << 8) | pdu[4]);
                             (responseData, responseCode) = ModbusFunctions.ReadDigitals(unitId, address, count, OnReadDiscretes);
 
-                            if(responseCode == MbExceptionCode.Ok)
+                            if (responseCode == MbExceptionCode.Ok)
                             {
-                                responseBuffer = new byte[2 + responseData.Length];
-                                responseBuffer[0] = functionCode;
-                                responseBuffer[1] = (byte)responseData.Length;
-                                Array.Copy(responseData, 0, responseBuffer, 2, responseData.Length);
+                                responsePdu.Add(functionCode);
+                                responsePdu.Add((byte)responseData.Length);
+                                responsePdu.AddRange(responseData);
                             }
                         }
                         break;
@@ -270,7 +284,7 @@ namespace Kimbus.Slave
                             responseCode = ModbusFunctions.WriteCoils(unitId, address, 1, pdu.Skip(3).ToArray(), OnWriteCoils);
                             if (responseCode == MbExceptionCode.Ok)
                             {
-                                responseBuffer = pdu.ToArray();
+                                responsePdu = pdu;
                             }
                         }
                         break;
@@ -287,7 +301,7 @@ namespace Kimbus.Slave
 
                                 if (responseCode == MbExceptionCode.Ok)
                                 {
-                                    responseBuffer = pdu.Take(5).ToArray();
+                                    responsePdu = pdu.GetRange(0, 5);
                                 }
                             }
                         }
@@ -301,10 +315,9 @@ namespace Kimbus.Slave
 
                             if (responseCode == MbExceptionCode.Ok)
                             {
-                                responseBuffer = new byte[2 + responseData.Length];
-                                responseBuffer[0] = functionCode;
-                                responseBuffer[1] = (byte)responseData.Length;
-                                Array.Copy(responseData, 0, responseBuffer, 2, responseData.Length);
+                                responsePdu.Add(functionCode);
+                                responsePdu.Add((byte)responseData.Length);
+                                responsePdu.AddRange(responseData);
                             }
                         }
                         break;
@@ -317,10 +330,9 @@ namespace Kimbus.Slave
 
                             if (responseCode == MbExceptionCode.Ok)
                             {
-                                responseBuffer = new byte[2 + responseData.Length];
-                                responseBuffer[0] = functionCode;
-                                responseBuffer[1] = (byte)responseData.Length;
-                                Array.Copy(responseData, 0, responseBuffer, 2, responseData.Length);
+                                responsePdu.Add(functionCode);
+                                responsePdu.Add((byte)responseData.Length);
+                                responsePdu.AddRange(responseData);
                             }
                         }
                         break;
@@ -333,7 +345,7 @@ namespace Kimbus.Slave
 
                             if (responseCode == MbExceptionCode.Ok)
                             {
-                                responseBuffer = pdu.ToArray();
+                                responsePdu = pdu;
                             }
                         }
                         break;
@@ -350,7 +362,7 @@ namespace Kimbus.Slave
 
                                 if (responseCode == MbExceptionCode.Ok)
                                 {
-                                    responseBuffer = pdu.Take(5).ToArray();
+                                    responsePdu = pdu.GetRange(0, 5);
                                 }
                             }
                         }
@@ -360,17 +372,14 @@ namespace Kimbus.Slave
                         break;
                 }
 
-                if (responseCode != MbExceptionCode.Ok)
-                {
-                    response = ModbusFunctions.GenerateExceptionResponse(transId, unitId, functionCode, responseCode);
-                }
-                else if (responseBuffer.Length != 0)
-                {
-                    response = ModbusFunctions.GenerateResponse(transId, unitId, functionCode, responseBuffer);
-                }
+                var response = responseCode != MbExceptionCode.Ok
+                    ? GenerateExceptionResponse(transId, unitId, functionCode, responseCode)
+                    : MbHelpers.PrependMbapHeader(unitId, transId, responsePdu);
+
+                return response.ToArray();
             }
 
-            return response;
+            return new byte[0];
         }
     }
 }
