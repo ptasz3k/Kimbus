@@ -65,6 +65,8 @@ namespace Kimbus.Slave
         /// </summary>
         public Func<byte, ushort, bool[], MbExceptionCode> OnWriteCoils { get; set; }
 
+        public Dictionary<byte, Func<byte[], (byte[], MbExceptionCode)>> UserFunctions { get; } = new Dictionary<byte, Func<byte[], (byte[], MbExceptionCode)>>();
+
         private static List<byte> GenerateExceptionResponse(int transId, byte unitId, int functionCode, MbExceptionCode responseCode)
         {
             var response = new List<byte>
@@ -368,7 +370,21 @@ namespace Kimbus.Slave
                         }
                         break;
                     default:
-                        /* TODO: code for user supplied custom functions */
+                        if (UserFunctions.ContainsKey(functionCode))
+                        {
+                            byte[] userResponse = new byte[0];
+                            try
+                            {
+                                _logger.Debug($"Calling user function number {functionCode}");
+                                (userResponse, responseCode) = UserFunctions[functionCode](pdu.ToArray());
+                                responsePdu = userResponse.ToList();
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.Debug($"Exception catched while calling user function {functionCode}: {ex.Message}");
+                                responseCode = MbExceptionCode.SlaveDeviceFailure;
+                            }
+                        }
                         break;
                 }
 
