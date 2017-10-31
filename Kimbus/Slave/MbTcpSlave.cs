@@ -65,7 +65,12 @@ namespace Kimbus.Slave
         /// </summary>
         public Func<byte, ushort, bool[], MbExceptionCode> OnWriteCoils { get; set; }
 
-        public Dictionary<byte, Func<byte[], (byte[], MbExceptionCode)>> UserFunctions { get; } = new Dictionary<byte, Func<byte[], (byte[], MbExceptionCode)>>();
+        /// <summary>
+        /// functionCode: (unitId, pdu) => (return_values, status)
+        /// Dictionary of user handled modbus functions.
+        /// </summary>
+        public Dictionary<byte, Func<byte, byte[], (byte[], MbExceptionCode)>> UserFunctions { get; } 
+            = new Dictionary<byte, Func<byte, byte[], (byte[], MbExceptionCode)>>();
 
         private static List<byte> GenerateExceptionResponse(int transId, byte unitId, int functionCode, MbExceptionCode responseCode)
         {
@@ -376,7 +381,7 @@ namespace Kimbus.Slave
                             try
                             {
                                 _logger.Debug($"Calling user function number {functionCode}");
-                                (userResponse, responseCode) = UserFunctions[functionCode](pdu.ToArray());
+                                (userResponse, responseCode) = UserFunctions[functionCode](unitId, pdu.ToArray());
                                 responsePdu = userResponse.ToList();
                             }
                             catch (Exception ex)
