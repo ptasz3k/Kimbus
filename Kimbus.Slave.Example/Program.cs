@@ -8,43 +8,44 @@ namespace Kimbus.Slave.Example
         {
             Console.WriteLine("Hello World!");
 
-            var mbSlave = new MbTcpSlave("*", 502);
-
-            mbSlave.OnWriteCoils = (_, start, bools) =>
+            var mbSlave = new MbTcpSlave("*", 502)
             {
-                Console.WriteLine("Write coils at {0}, len: {1}", start, bools.Length);
-
-                for (var i = 0; i < bools.Length; ++i)
+                OnWriteCoils = (_, start, bools) =>
                 {
-                    Console.WriteLine("{0}: {1}", i + start, bools[i]);
-                }
+                    Console.WriteLine("Write coils at {0}, len: {1}", start, bools.Length);
 
-                return MbExceptionCode.Ok;
-            };
+                    for (var i = 0; i < bools.Length; ++i)
+                    {
+                        Console.WriteLine("{0}: {1}", i + start, bools[i]);
+                    }
 
-            mbSlave.OnWriteHoldingRegisters = (_, start, hrs) =>
-            {
-                Console.WriteLine("Write holding registers at {0}, len: {1}", start, hrs.Length);
+                    return MbExceptionCode.Ok;
+                },
 
-                for (var i = 0; i < hrs.Length; ++i)
+                OnWriteHoldingRegisters = (_, start, hrs) =>
                 {
-                    Console.WriteLine("{0}: {1}", i + start, hrs[i]);
-                }
+                    Console.WriteLine("Write holding registers at {0}, len: {1}", start, hrs.Length);
 
-                return MbExceptionCode.Ok;
+                    for (var i = 0; i < hrs.Length; ++i)
+                    {
+                        Console.WriteLine("{0}: {1}", i + start, hrs[i]);
+                    }
 
-            };
+                    return MbExceptionCode.Ok;
 
-            mbSlave.OnReadHoldingRegisters = (_, start, count) =>
-            {
-                var buffer = new ushort[count];
+                },
 
-                for (var i = 0; i < count; ++i)
+                OnReadHoldingRegisters = (_, start, count) =>
                 {
-                    buffer[i] = (ushort)(i + start);
-                }
+                    var buffer = new ushort[count];
 
-                return (buffer, MbExceptionCode.Ok);
+                    for (var i = 0; i < count; ++i)
+                    {
+                        buffer[i] = (ushort)(i + start);
+                    }
+
+                    return (buffer, MbExceptionCode.Ok);
+                }
             };
             mbSlave.OnReadInputRegisters = mbSlave.OnReadHoldingRegisters;
 
