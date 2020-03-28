@@ -10,8 +10,6 @@ namespace Kimbus.Master
 {
     public class MbTcpTransport : IMbTransport
     {
-        private readonly SocketAsyncEventArgs _eventArgs;
-        private readonly SocketAwaitable _awaitable;
         private readonly Socket _socket;
         private readonly int _timeout;
 
@@ -24,20 +22,8 @@ namespace Kimbus.Master
             _transactionId = (ushort)(_transactionId == ushort.MaxValue ? 0 : _transactionId + 1);
         }
 
-        private static byte LittleNibble(ushort val)
-        {
-            return (byte)(val & 0x00ff);
-        }
-
-        private static byte BigNibble(ushort val)
-        {
-            return (byte)(val >> 8);
-        }
-
         public MbTcpTransport(string ip, ushort port, int timeout = 10000)
         {
-            _eventArgs = new SocketAsyncEventArgs();
-            _awaitable = new SocketAwaitable(this._eventArgs);
             _socket = new Socket(IPAddress.Parse(ip).AddressFamily, SocketType.Stream, ProtocolType.Tcp) { SendTimeout = 1000, ReceiveTimeout = 1000 };
             _socket.NoDelay = true;
             _ip = ip;
@@ -50,8 +36,9 @@ namespace Kimbus.Master
 
         public Try<bool> Connect()
         {
-            Func<Task> connect = async () => await _socket.ConnectAsync(_awaitable, _ip, _port);
-            Func<Task> connectWithTimeout = async () => await Task.WhenAny(connect(), Task.Delay(_timeout));
+            var endpoint = new IPEndPoint(IPAddress.Parse(_ip), _port);
+            async Task connect() => await _socket.ConnectAsync(endpoint);
+            async Task connectWithTimeout() => await Task.WhenAny(connect(), Task.Delay(_timeout));
             var t = Try.Apply(() => connectWithTimeout().Wait());
             if (!_socket.Connected && t.IsSuccess)
             {
@@ -70,18 +57,18 @@ namespace Kimbus.Master
 
             var buffer = new List<byte>();
 
-            Func<Task> receive = async () =>
+            async Task receive()
             {
                 do
                 {
-                    await _socket.ReceiveAsync(_awaitable);
-                    buffer.AddRange(_eventArgs.Buffer.Take(_eventArgs.BytesTransferred));
+                    var segment = new ArraySegment<byte>(new byte[512]);
+                    var received = await _socket.ReceiveAsync(segment, SocketFlags.None);
+                    buffer.AddRange(segment.Array.Take(received));
                 } while (_socket.Available != 0);
-            };
+            }
 
             bool rectimeout = false;
-            Func<Task> receiveWithTimeout =
-              async () => await Task.WhenAny(receive(), Task.Delay(_timeout).ContinueWith(
+            async Task receiveWithTimeout() => await Task.WhenAny(receive(), Task.Delay(_timeout).ContinueWith(
                 t => rectimeout = true));
 
             var result =
@@ -126,20 +113,19 @@ namespace Kimbus.Master
 
             if (_socket.Poll(0, SelectMode.SelectRead))
             {
-                /* at this point we assume, that there can't be anything to read,
+                /* at this point we assume that there can't be anything to read,
                 * so socket received FINACK some time ago
                 * http://stackoverflow.com/questions/23665917/is-it-possible-to-detect-if-a-socket-is-in-the-close-wait-state/ */
                 _socket.Close();
                 return Try.Failure<bool>(new SocketException((int)SocketError.NotConnected));
             }
 
-            Func<Task> send = async () => await _socket.SendAsync(_awaitable);
+            async Task<int> send(ArraySegment<byte> segment) => await _socket.SendAsync(segment, SocketFlags.None);
 
             var result =
-              from pdu in Try.Apply(() => MbHelpers.PrependMbapHeader(unitId, _transactionId, adu))
-              from set in Try.Apply(() => _eventArgs.SetBuffer(pdu.ToArray(), 0, pdu.Count))
-              from snd in Try.Apply(() => send().Wait())
-              select _eventArgs.BytesTransferred > 0;
+              from pdu in Try.Apply(() => new ArraySegment<byte>(MbHelpers.PrependMbapHeader(unitId, _transactionId, adu).ToArray()))
+              from snd in Try.Apply(() => { var sent = send(pdu); sent.Wait(); return sent.Result; })
+              select snd == pdu.Count;
 
             // TODO: check for exceptions and so on....
 
@@ -149,13 +135,11 @@ namespace Kimbus.Master
         public void Close()
         {
             _socket.Dispose();
-            _eventArgs.Dispose();
         }
 
         public void Dispose()
         {
             _socket.Dispose();
-            _eventArgs.Dispose();
         }
     }
 }
