@@ -1,15 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Radek Krahl</Authors>
-    <Version>0.8.1</Version>
+    <Version>1.9.0-alpha</Version>
     <Company>Klimat Solec Sp. z o.o.</Company>
     <Description>Asynchronous modbus tcp/ip slave/master</Description>
-    <AssemblyName>Kimbus</AssemblyName>
+    <AssemblyName>Kimbus2</AssemblyName>
     <RootNamespace>Kimbus</RootNamespace>
     <PackageId>kimbus-netcore</PackageId>
-    <Product>kimbus</Product>
+    <Product>kimbus2</Product>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="nlog" Version="5.0.0-beta11" />
