@@ -182,7 +182,7 @@ namespace Kimbus.Slave
             await Task.Yield();
 
             string clientEndPoint = tcpClient.Client.RemoteEndPoint.ToString();
-            _logger.Info($"Received connection request from {clientEndPoint}");
+            _logger.Debug($"Received connection request from {clientEndPoint}");
 
             using (var networkStream = tcpClient.GetStream())
             {
@@ -209,13 +209,13 @@ namespace Kimbus.Slave
                     {
                         if (timeout)
                         {
-                            _logger.Info($"{clientEndPoint} was quiet for {Timeout / 1000} seconds, disconnecting");
+                            _logger.Debug($"{clientEndPoint} was quiet for {Timeout / 1000} seconds, disconnecting");
                             break;
                         }
 
                         if (tcpClient.Client.Poll(1, SelectMode.SelectRead) && !networkStream.DataAvailable)
                         {
-                            _logger.Info($"{clientEndPoint} disconnected");
+                            _logger.Debug($"{clientEndPoint} disconnected");
                             break;
                         }
 
