@@ -8,9 +8,7 @@ namespace Kimbus.Slave
 {
     internal static class ModbusFunctions
     {
-        private static Logger _logger = LogManager.GetCurrentClassLogger();
-
-
+        private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
 
         internal static (byte[], MbExceptionCode) Read<T>(byte unitId, ushort address, ushort count,
             Func<byte, ushort, ushort, (T[], MbExceptionCode)> onRead, Func<IEnumerable<T>, IEnumerable<byte>> unpack)

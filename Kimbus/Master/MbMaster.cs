@@ -8,7 +8,7 @@ namespace Kimbus.Master
 {
     public class MbMaster : IMbMaster
     {
-        private Logger _logger = LogManager.GetCurrentClassLogger();
+        private readonly Logger _logger = LogManager.GetCurrentClassLogger();
 
         protected readonly IMbTransport _mbTransport;
 
@@ -424,7 +424,7 @@ namespace Kimbus.Master
 
             if (vals.Count == 0)
             {
-                return Try.Failure<bool>(new ArgumentException("Cannot write 0 holding registers", nameof(values)));
+                return Try.Failure<bool>(new ArgumentOutOfRangeException("Cannot write 0 holding registers", nameof(values)));
             }
 
             if (vals.Count == 1)
