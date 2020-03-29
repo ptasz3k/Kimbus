@@ -33,37 +33,43 @@ namespace Kimbus.Slave
         /// (unitId, address, count) => (return_values, status)
         /// Callback function for read holding register request.
         /// </summary>
-        public Func<byte, ushort, ushort, (ushort[], MbExceptionCode)> OnReadHoldingRegisters { get; set; }
+        public Func<byte, ushort, ushort, (ushort[], MbExceptionCode)> OnReadHoldingRegisters { get; set; } 
+            = (x, y, z) => (new ushort[0], MbExceptionCode.IllegalFunction);
 
         /// <summary>
         /// (unitId, address, count) => (return_values, status)
         /// Callback function for read input register request.
         /// </summary>
         public Func<byte, ushort, ushort, (ushort[], MbExceptionCode)> OnReadInputRegisters { get; set; }
+            = (x, y, z) => (new ushort[0], MbExceptionCode.IllegalFunction);
 
         /// <summary>
         /// (unitId, address, count) => (return_values, status)
         /// Callback function for read coils request.
         /// </summary>
         public Func<byte, ushort, ushort, (bool[], MbExceptionCode)> OnReadCoils { get; set; }
+            = (x, y, z) => (new bool[0], MbExceptionCode.IllegalFunction);
 
         /// <summary>
         /// (unitId, address, count) => (return_values, status)
         /// Callback function for read discretes request.
         /// </summary>
         public Func<byte, ushort, ushort, (bool[], MbExceptionCode)> OnReadDiscretes { get; set; }
+            = (x, y, z) => (new bool[0], MbExceptionCode.IllegalFunction);
 
         /// <summary>
         /// (unitId, address, values_to_store) => status
         /// Callback function for write holding registers request.
         /// </summary>
         public Func<byte, ushort, ushort[], MbExceptionCode> OnWriteHoldingRegisters { get; set; }
+            = (x, y, z) => MbExceptionCode.IllegalFunction;
 
         /// <summary>
         /// (unitId, address, values_to_store) => status
         /// Callback function for write coils request.
         /// </summary>
         public Func<byte, ushort, bool[], MbExceptionCode> OnWriteCoils { get; set; }
+            = (x, y, z) => MbExceptionCode.IllegalFunction;
 
         /// <summary>
         /// functionCode: (unitId, pdu) => (return_values, status)
