@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 namespace Kimbus.Slave.Example
 {
@@ -66,11 +67,43 @@ namespace Kimbus.Slave.Example
 
             mbSlave.Listen();
 
-            using (var mbMaster = new Master.MbMaster(new Master.MbTcpTransport("127.0.0.1", 502)))
+            var errors = 0;
+            var tx = 0;
+            while (true)
             {
-                mbMaster.Open();
-                var result = mbMaster.ReadCoils(0, 999, 1200);
-                ;
+                using (var mbMaster = new Master.MbMaster(new Master.MbTcpTransport("127.0.0.1", 502)))
+                {
+                    mbMaster.Open();
+                    while (true)
+                    {
+                        tx++;
+                        var result = mbMaster.ReadCoils(0, 999, 1200);
+                        if (!result.IsSuccess)
+                        {
+                            errors++;
+                            if (!mbMaster.Connected)
+                            {
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            ;
+                        }
+                        Console.WriteLine($"Tx: {tx}, errors: {errors}.");
+                        Thread.Sleep(10);
+                        if (tx % 1000 == 0)
+                        {
+                            Console.WriteLine("Waiting 2.5 minutes for timeout...");
+                            Thread.Sleep(150000);
+                        }
+                        else if (tx % 100 == 0)
+                        {
+                            mbMaster.Close();
+                            break;
+                        }
+                    }
+                }
             }
 
             Console.ReadLine();
