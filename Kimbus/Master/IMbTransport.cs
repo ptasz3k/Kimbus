@@ -8,8 +8,8 @@ namespace Kimbus.Master
     {
         bool Connected { get; }
         Try<bool> Connect();
-        Try<bool> Send(byte slave, List<byte> bytes);
-        Try<List<byte>> Receive();
+        Try<bool> Send(byte unitId, List<byte> bytes);
+        Try<List<byte>> Receive(byte expectedUnitId);
         void Close();
     }
 }

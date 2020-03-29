@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Kimbus.Helpers;
+using NLog;
 
 namespace Kimbus.Master
 {
@@ -16,6 +17,8 @@ namespace Kimbus.Master
         private readonly string _ip;
         private readonly ushort _port;
         private ushort _transactionId;
+
+        private readonly Logger _logger = LogManager.GetCurrentClassLogger();
 
         private void NextTransaction()
         {
@@ -50,7 +53,7 @@ namespace Kimbus.Master
             return t;
         }
 
-        public Try<List<byte>> Receive()
+        public Try<List<byte>> Receive(byte expectedUnitId)
         {
             if (!_socket.Connected)
                 return Try.Failure<List<byte>>(new SocketException((int)SocketError.NotConnected));
@@ -89,15 +92,23 @@ namespace Kimbus.Master
 
                   (var transId, var unitId, var pdu) = MbHelpers.UnwrapMbapHeader(buffer);
 
-                  // TODO: check if transId and unitId are consistent with request,
-                  //       throw exception if not
-                  return pdu;
+                  if (transId != _transactionId)
+                  {
+                      var message = $"Sent transaction id {_transactionId}, received {transId}. Dropping response.";
+                      _logger.Debug(message);
+                      throw new Exception(message);
+                  }
 
+                  if (unitId != expectedUnitId)
+                  {
+                      var message = $"Sent unit id {expectedUnitId}, received {unitId}. Dropping response.";
+                      _logger.Debug(message);
+                      throw new Exception(message);
+                  }
+
+                  return pdu;
               })
               select res;
-
-            // TODO: Timeouts and other bad stuff...
-            // TODO: should we check transactionId?
 
             NextTransaction();
 

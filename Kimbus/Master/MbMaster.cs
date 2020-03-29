@@ -277,7 +277,7 @@ namespace Kimbus.Master
             var result =
               from pdu in Try.Apply(() => CreateReadPdu(MbFunctionCode.ReadCoils, address, count))
               from snd in _mbTransport.Send(unitId, pdu)
-              from response in _mbTransport.Receive()
+              from response in _mbTransport.Receive(unitId)
               select UnwrapDiscretePdu(MbFunctionCode.ReadCoils, count, response);
 
             return result;
@@ -288,7 +288,7 @@ namespace Kimbus.Master
             var result =
               from pdu in Try.Apply(() => CreateReadPdu(MbFunctionCode.ReadDiscreteInputs, address, count))
               from snd in _mbTransport.Send(unitId, pdu)
-              from response in _mbTransport.Receive()
+              from response in _mbTransport.Receive(unitId)
               select UnwrapDiscretePdu(MbFunctionCode.ReadDiscreteInputs, count, response);
 
             return result;
@@ -299,7 +299,7 @@ namespace Kimbus.Master
             var result =
               from pdu in Try.Apply(() => CreateReadPdu(MbFunctionCode.ReadHoldingRegisters, address, count))
               from snd in _mbTransport.Send(unitId, pdu)
-              from response in _mbTransport.Receive()
+              from response in _mbTransport.Receive(unitId)
               select UnwrapAnalogPdu(MbFunctionCode.ReadHoldingRegisters, count, response);
 
             return result;
@@ -310,7 +310,7 @@ namespace Kimbus.Master
             var result =
               from pdu in Try.Apply(() => CreateReadPdu(MbFunctionCode.ReadInputRegisters, address, count))
               from snd in _mbTransport.Send(unitId, pdu)
-              from response in _mbTransport.Receive()
+              from response in _mbTransport.Receive(unitId)
               select UnwrapAnalogPdu(MbFunctionCode.ReadInputRegisters, count, response);
 
             return result;
@@ -330,14 +330,14 @@ namespace Kimbus.Master
                 return
                   from pdu in Try.Apply(() => CreateWriteSingleCoilPdu(address, vals[0]))
                   from snd in _mbTransport.Send(unitId, pdu)
-                  from res in _mbTransport.Receive()
+                  from res in _mbTransport.Receive(unitId)
                   select CheckWriteSingleResponse(res, MbFunctionCode.WriteSingleCoil, address, (ushort)(vals[0] ? 0xff00 : 0x0000));
             }
 
             return
               from pdu in Try.Apply(() => CreateWriteMultipleCoilsPdu(address, vals))
               from snd in _mbTransport.Send(unitId, pdu)
-              from res in _mbTransport.Receive()
+              from res in _mbTransport.Receive(unitId)
               select CheckWriteMultipleResponse(res, MbFunctionCode.WriteMultipleCoils, address, vals.Count);
         }
 
@@ -413,7 +413,7 @@ namespace Kimbus.Master
             return true;
         }
 
-        public Try<bool> WriteHoldingRegisters(byte slaveId, ushort address, IEnumerable<ushort> values)
+        public Try<bool> WriteHoldingRegisters(byte UnitId, ushort address, IEnumerable<ushort> values)
         {
             if (values == null)
             {
@@ -431,15 +431,15 @@ namespace Kimbus.Master
             {
                 return
                   from pdu in Try.Apply(() => CreateWriteSingleRegisterPdu(address, vals[0]))
-                  from snd in _mbTransport.Send(slaveId, pdu)
-                  from res in _mbTransport.Receive()
+                  from snd in _mbTransport.Send(UnitId, pdu)
+                  from res in _mbTransport.Receive(UnitId)
                   select CheckWriteSingleResponse(res, MbFunctionCode.WriteSingleRegister, address, vals[0]);
             }
 
             return
               from pdu in Try.Apply(() => CreateWriteMultipleRegistersPdu(address, vals))
-              from snd in _mbTransport.Send(slaveId, pdu)
-              from res in _mbTransport.Receive()
+              from snd in _mbTransport.Send(UnitId, pdu)
+              from res in _mbTransport.Receive(UnitId)
               select CheckWriteMultipleResponse(res, MbFunctionCode.WriteMultipleRegisters, address, vals.Count);
         }
 
@@ -455,18 +455,18 @@ namespace Kimbus.Master
             return
                 from pdu in Try.Apply(() => CreateWriteFilePdu(fileNumber, recordSize, recordNumber, file))
                 from snd in _mbTransport.Send(unitId, pdu)
-                from res in _mbTransport.Receive()
+                from res in _mbTransport.Receive(unitId)
                 select CheckWriteFileResponse(res, pdu);
         }
 
 
-        public Try<List<byte>> SendUserFunction(byte slaveId, byte functionCode, byte[] data)
+        public Try<List<byte>> SendUserFunction(byte unitId, byte functionCode, byte[] data)
         {
             var pdu = new[] { functionCode }.Concat(data).ToList();
 
             var r =
-                from snd in _mbTransport.Send(slaveId, pdu)
-                from response in _mbTransport.Receive()
+                from snd in _mbTransport.Send(unitId, pdu)
+                from response in _mbTransport.Receive(unitId)
                 select UnwrapUserFunctionPdu(functionCode, response);
 
             return r;
