@@ -195,9 +195,14 @@ namespace Kimbus.Slave
                     using (var cts = new CancellationTokenSource())
                     {
                         byteCount = (await Task.WhenAny(
-                            networkStream.ReadAsync(buffer, 0, buffer.Length).ContinueWith(t => { cts.Cancel(); return t.Result; }),
+                            networkStream.ReadAsync(buffer, 0, buffer.Length).ContinueWith(t => { return t.Result; }),
                             Task.Delay(Timeout, cts.Token).ContinueWith(t => { timeout = !t.IsCanceled; return 0; }))
                             ).Result;
+
+                        if (!timeout)
+                        {
+                            cts.Cancel();
+                        }
                     }
 
                     if (byteCount == 0)
