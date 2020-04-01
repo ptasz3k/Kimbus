@@ -31,26 +31,20 @@ namespace Kimbus.Helpers
 
     public class Try<T>
     {
-        private readonly bool _isFailure;
+        public bool IsFailure { get; }
 
-        private readonly T _success;
+        public bool IsSuccess { get { return !IsFailure; } }
 
-        private readonly Exception _failure;
+        public T Success { get; }
 
-        public bool IsFailure { get { return _isFailure; } }
-
-        public bool IsSuccess { get { return !_isFailure; } }
-
-        public T Success { get { return _success; } }
-
-        public Exception Failure { get { return _failure; } }
+        public Exception Failure { get; }
 
         public Try(Func<T> throwableFunc)
         {
             try
             {
-                _success = throwableFunc();
-                _isFailure = false;
+                Success = throwableFunc();
+                IsFailure = false;
             }
             catch (Exception e)
             {
@@ -60,8 +54,8 @@ namespace Kimbus.Helpers
                 {
                     e = e.InnerException;
                 }
-                _failure = e;
-                _isFailure = true;
+                Failure = e;
+                IsFailure = true;
             }
         }
 
@@ -70,12 +64,12 @@ namespace Kimbus.Helpers
             try
             {
                 throwableAction();
-                _isFailure = false;
+                IsFailure = false;
             }
             catch (Exception e)
             {
-                _isFailure = true;
-                _failure = e;
+                IsFailure = true;
+                Failure = e;
             }
         }
     }
