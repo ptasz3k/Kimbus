@@ -2,9 +2,9 @@
 
 ![.NET Core](https://github.com/ptasz3k/Kimbus/workflows/.NET%20Core/badge.svg)
 
-Asynchronous netstandard2.0 Modbus/TCP client/server (master/slave) library.
+Asynchronous .NET Standard 2.0 Modbus/TCP client/server (master/slave) library used for over 6 years in production in [Wayy](https://www.wayy.pl/) projects.
 
-### Current status:
+## Current status
 
 Function Code | Function name                 | Client | Server
 :-------------|:----------------------------- |:------:|:----:
@@ -21,7 +21,13 @@ Function Code | Function name                 | Client | Server
 0x2b 0x2e     | Read Device Identification    | No     | No
 any           | Custom function               | Yes    | Yes
 
+## Sample code
+
+Check `Kimbus.Slave.Example` project for both client and server sample code.
+
 ### Sample client code
+
+Include `Kimbus.Master` namespace and then:
 
 ```csharp
 using (var mbMaster = new Master.MbMaster(new Master.MbTcpTransport("127.0.0.1", 502)))
@@ -40,6 +46,8 @@ using (var mbMaster = new Master.MbMaster(new Master.MbTcpTransport("127.0.0.1",
 ```
 
 ### Sample server code
+
+Include `Kimbus.Slave` namespace and then:
 
 ```csharp
 var mbSlave = new MbTcpSlave("*", 502)
@@ -70,12 +78,12 @@ var mbSlave = new MbTcpSlave("*", 502)
 mbSlave.Listen();
 ```
 
-### Custom function support
+## Custom function support
 
 To add custom function support for client create your own `CustomMbMaster` class deriving from `MbMaster`.
 
 To add custom function support for server add entry to the `MbTcpSlave.UserFunctions` dictionary.
 
-### Custom transport support for master
+## Custom transport support for master
 
-It is fairly easy to implement custom transport (eg. synchronous TCP or RTU) for master/client class by creating new transport implementing `IMbTransport` interface.
+It should be fairly easy to implement custom transport (eg. synchronous TCP or RTU) for master/client class by creating new transport implementing `IMbTransport` interface.
