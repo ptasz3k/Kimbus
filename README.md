@@ -4,6 +4,10 @@
 
 Asynchronous .NET Standard 2.0 Modbus/TCP client/server (master/slave) library used for over 6 years in production in [Wayy](https://www.wayy.pl/) projects.
 
+## Installing
+
+Kimbus is available as [nuget package](https://www.nuget.org/packages/kimbus/).
+
 ## Current status
 
 Function Code | Function name                 | Client | Server
