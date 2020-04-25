@@ -72,6 +72,10 @@ mbSlave.Listen();
 
 ### Custom function support
 
-To add custom function support for client TODO: write
+To add custom function support for client create your own `CustomMbMaster` class deriving from `MbMaster`.
 
-To add custom function support for server simply add entry to the `MbTcpSlave.UserFunctions` dictionary.
+To add custom function support for server add entry to the `MbTcpSlave.UserFunctions` dictionary.
+
+### Custom transport support for master
+
+It is fairly easy to implement custom transport (eg. synchronous TCP or RTU) for master/client class by creating new transport implementing `IMbTransport` interface.
