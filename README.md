@@ -30,7 +30,7 @@ Check `Kimbus.Slave.Example` project for both client and server sample code.
 Include `Kimbus.Master` namespace and then:
 
 ```csharp
-using (var mbMaster = new Master.MbMaster(new Master.MbTcpTransport("127.0.0.1", 502)))
+using (var mbMaster = new MbMaster(new MbTcpTransport("127.0.0.1", 502)))
 {
     mbMaster.Open();
     var result = mbMaster.ReadCoils(0, 999, 1200);
