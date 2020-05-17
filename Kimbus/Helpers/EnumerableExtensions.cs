@@ -4,7 +4,7 @@ namespace Kimbus.Helpers
 {
     internal static class EnumerableExtensions
     {
-        internal static IEnumerable<IEnumerable<T>> Chunk<T>(
+        public static IEnumerable<IEnumerable<T>> Chunk<T>(
             this IEnumerable<T> source, int chunkSize)
         {
             using (var enumerator = source.GetEnumerator())
