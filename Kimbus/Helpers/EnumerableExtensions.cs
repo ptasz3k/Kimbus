@@ -2,8 +2,15 @@
 
 namespace Kimbus.Helpers
 {
-    internal static class EnumerableExtensions
+    public static class EnumerableExtensions
     {
+        /// <summary>
+        /// Split source enumerable into enumerable of enumerables of chunkSize size.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="chunkSize"></param>
+        /// <returns></returns>
         public static IEnumerable<IEnumerable<T>> Chunk<T>(
             this IEnumerable<T> source, int chunkSize)
         {
