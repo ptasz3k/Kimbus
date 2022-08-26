@@ -19,6 +19,6 @@
     <PackageTags>modbus;tcp;master;slave;client;server</PackageTags>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="nlog" Version="4.7.0" />
+    <PackageReference Include="nlog" Version="5.0.2" />
   </ItemGroup>
 </Project>
