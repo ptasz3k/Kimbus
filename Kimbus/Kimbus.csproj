@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Title>Kimbus</Title>
     <PackageId>Kimbus</PackageId>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <Authors>Radek Krahl</Authors>
     <Version>2.0.1</Version>
