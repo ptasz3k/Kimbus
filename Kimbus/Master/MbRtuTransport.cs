@@ -96,7 +96,13 @@ namespace Kimbus.Master
 
         public Try<bool> Send(byte unitId, List<byte> bytes)
         {
-          async Task send() => await _serialPort.BaseStream.WriteAsync(bytes.ToArray(), 0, bytes.Count);
+          if (!Connected)
+          {
+            return Try.Failure<bool>(new IOException("Not connected"));
+          }
+
+          var frame = MbHelpers.WrapRtuFrame(unitId, bytes);
+          async Task send() => await _serialPort.BaseStream.WriteAsync(frame.ToArray(), 0, bytes.Count);
           var t = Try.Apply(() => send().Wait());
           return t;
         }

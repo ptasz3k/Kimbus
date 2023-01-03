@@ -4,10 +4,10 @@ using System.Linq;
 
 namespace Kimbus.Helpers
 {
-    static class MbHelpers
+    public static class MbHelpers
     {
 
-        internal static List<byte> PrependMbapHeader(byte unitId, ushort transactionId, List<byte> pdu)
+        public static List<byte> PrependMbapHeader(byte unitId, ushort transactionId, List<byte> pdu)
         {
             var header = new List<byte>()
             {
@@ -24,7 +24,7 @@ namespace Kimbus.Helpers
             return header;
         }
 
-        private static ushort CalculateCrc(List<byte> data)
+        public static ushort CalculateCrc(List<byte> data)
         {
             var crc = 0xffff;
             foreach (var b in data)
@@ -47,7 +47,20 @@ namespace Kimbus.Helpers
             return (ushort)crc;
         }
 
-        internal static (byte unitId, List<byte> data) UnwrapRtuHeader(List<byte> frame)
+        public static List<byte> WrapRtuFrame(byte unitId, List<byte> data)
+        {
+            var frame = new List<byte>()
+            {
+                unitId
+            };
+            frame.AddRange(data);
+            var crc = CalculateCrc(frame);
+            frame.Add((byte)(crc & 0xff));
+            frame.Add((byte)(crc >> 8));
+            return frame;
+        }
+
+        public static (byte unitId, List<byte> data) UnwrapRtuHeader(List<byte> frame)
         {
           if (frame == null || frame.Count < 4)
           {
@@ -67,7 +80,7 @@ namespace Kimbus.Helpers
           return (unitId, data);
         }
 
-        internal static (ushort transId, byte unitId, List<byte> pdu) UnwrapMbapHeader(List<byte> adu)
+        public static (ushort transId, byte unitId, List<byte> pdu) UnwrapMbapHeader(List<byte> adu)
         {
             if (adu == null || adu.Count < 7)
             {
@@ -92,7 +105,7 @@ namespace Kimbus.Helpers
             return (transId, unitId, adu.Skip(7).ToList());
         }
 
-        internal static byte BooleansToByte(IEnumerable<bool> bools)
+        public static byte BooleansToByte(IEnumerable<bool> bools)
         {
             if (bools == null)
             {
