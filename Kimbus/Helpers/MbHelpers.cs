@@ -70,7 +70,7 @@ namespace Kimbus.Helpers
           var messageCrc = frame.Skip(frame.Count - 2).Take(2).ToArray();
           var calculatedCrc = CalculateCrc(frame.Take(frame.Count - 2).ToList());
 
-          if (calculatedCrc != (messageCrc[0] << 8 | messageCrc[1]))
+          if (calculatedCrc != (messageCrc[1] << 8 | messageCrc[0]))
           {
             throw new ArgumentException("Invalid CRC");
           }
