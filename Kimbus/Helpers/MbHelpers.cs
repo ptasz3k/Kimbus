@@ -24,6 +24,49 @@ namespace Kimbus.Helpers
             return header;
         }
 
+        private static ushort CalculateCrc(List<byte> data)
+        {
+            var crc = 0xffff;
+            foreach (var b in data)
+            {
+                crc ^= b;
+                for (var i = 0; i < 8; i++)
+                {
+                    if ((crc & 0x0001) != 0)
+                    {
+                        crc >>= 1;
+                        crc ^= 0xa001;
+                    }
+                    else
+                    {
+                        crc >>= 1;
+                    }
+                }
+            }
+
+            return (ushort)crc;
+        }
+
+        internal static (byte unitId, List<byte> data) UnwrapRtuHeader(List<byte> frame)
+        {
+          if (frame == null || frame.Count < 4)
+          {
+            throw new ArgumentException("Invalid frame");
+          }
+
+          var messageCrc = frame.Skip(frame.Count - 2).Take(2).ToArray();
+          var calculatedCrc = CalculateCrc(frame.Take(frame.Count - 2).ToList());
+
+          if (calculatedCrc != (messageCrc[0] << 8 | messageCrc[1]))
+          {
+            throw new ArgumentException("Invalid CRC");
+          }
+
+          var unitId = frame[0];
+          var data = frame.Skip(1).Take(frame.Count - 3).ToList();
+          return (unitId, data);
+        }
+
         internal static (ushort transId, byte unitId, List<byte> pdu) UnwrapMbapHeader(List<byte> adu)
         {
             if (adu == null || adu.Count < 7)
