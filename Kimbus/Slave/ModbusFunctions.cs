@@ -88,7 +88,7 @@ namespace Kimbus.Slave
             else
             {
                 if ((count < 1)
-                    || (count > 0x07b0) 
+                    || (count > 0x07b0)
                     || (input.Length != count / 8 + (count % 8 != 0 ? 1 : 0)))
                 {
                     return MbExceptionCode.IllegalDataValue;

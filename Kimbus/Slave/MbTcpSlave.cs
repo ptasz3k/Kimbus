@@ -33,7 +33,7 @@ namespace Kimbus.Slave
         /// (unitId, address, count) => (return_values, status)
         /// Callback function for read holding register request.
         /// </summary>
-        public Func<byte, ushort, ushort, (ushort[], MbExceptionCode)> OnReadHoldingRegisters { get; set; } 
+        public Func<byte, ushort, ushort, (ushort[], MbExceptionCode)> OnReadHoldingRegisters { get; set; }
             = (x, y, z) => (new ushort[0], MbExceptionCode.IllegalFunction);
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace Kimbus.Slave
         /// functionCode: (unitId, pdu) => (return_values, status)
         /// Dictionary of user handled modbus functions.
         /// </summary>
-        public Dictionary<byte, Func<byte, byte[], (byte[], MbExceptionCode)>> UserFunctions { get; } 
+        public Dictionary<byte, Func<byte, byte[], (byte[], MbExceptionCode)>> UserFunctions { get; }
             = new Dictionary<byte, Func<byte, byte[], (byte[], MbExceptionCode)>>();
 
         private static List<byte> GenerateExceptionResponse(int transId, byte unitId, int functionCode, MbExceptionCode responseCode)

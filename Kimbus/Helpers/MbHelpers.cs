@@ -62,22 +62,22 @@ namespace Kimbus.Helpers
 
         public static (byte unitId, List<byte> data) UnwrapRtuHeader(List<byte> frame)
         {
-          if (frame == null || frame.Count < 4)
-          {
-            throw new ArgumentException("Invalid frame");
-          }
+            if (frame == null || frame.Count < 4)
+            {
+                throw new ArgumentException("Invalid frame");
+            }
 
-          var messageCrc = frame.Skip(frame.Count - 2).Take(2).ToArray();
-          var calculatedCrc = CalculateCrc(frame.Take(frame.Count - 2).ToList());
+            var messageCrc = frame.Skip(frame.Count - 2).Take(2).ToArray();
+            var calculatedCrc = CalculateCrc(frame.Take(frame.Count - 2).ToList());
 
-          if (calculatedCrc != (messageCrc[1] << 8 | messageCrc[0]))
-          {
-            throw new ArgumentException("Invalid CRC");
-          }
+            if (calculatedCrc != (messageCrc[1] << 8 | messageCrc[0]))
+            {
+                throw new ArgumentException("Invalid CRC");
+            }
 
-          var unitId = frame[0];
-          var data = frame.Skip(1).Take(frame.Count - 3).ToList();
-          return (unitId, data);
+            var unitId = frame[0];
+            var data = frame.Skip(1).Take(frame.Count - 3).ToList();
+            return (unitId, data);
         }
 
         public static (ushort transId, byte unitId, List<byte> pdu) UnwrapMbapHeader(List<byte> adu)
